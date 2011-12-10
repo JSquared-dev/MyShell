@@ -7,6 +7,8 @@
 	objects = {
 
 /* Begin PBXBuildFile section */
+		FC25F6801492E9EB003A3B78 /* builtin.c in Sources */ = {isa = PBXBuildFile; fileRef = FC25F67E1492E9EB003A3B78 /* builtin.c */; };
+		FC25F6841492E9F7003A3B78 /* commands.c in Sources */ = {isa = PBXBuildFile; fileRef = FC25F6821492E9F7003A3B78 /* commands.c */; };
 		FCBD1A41149298F9003A7EDF /* main.c in Sources */ = {isa = PBXBuildFile; fileRef = FCBD1A40149298F9003A7EDF /* main.c */; };
 /* End PBXBuildFile section */
 
@@ -23,6 +25,10 @@
 /* End PBXCopyFilesBuildPhase section */
 
 /* Begin PBXFileReference section */
+		FC25F67E1492E9EB003A3B78 /* builtin.c */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.c; path = builtin.c; sourceTree = "<group>"; };
+		FC25F67F1492E9EB003A3B78 /* builtin.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; path = builtin.h; sourceTree = "<group>"; };
+		FC25F6821492E9F7003A3B78 /* commands.c */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.c; path = commands.c; sourceTree = "<group>"; };
+		FC25F6831492E9F7003A3B78 /* commands.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; path = commands.h; sourceTree = "<group>"; };
 		FCBD1A3C149298F9003A7EDF /* MyShell */ = {isa = PBXFileReference; explicitFileType = "compiled.mach-o.executable"; includeInIndex = 0; path = MyShell; sourceTree = BUILT_PRODUCTS_DIR; };
 		FCBD1A40149298F9003A7EDF /* main.c */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.c; path = main.c; sourceTree = "<group>"; };
 		FCBD1A42149298F9003A7EDF /* MyShell.1 */ = {isa = PBXFileReference; lastKnownFileType = text.man; path = MyShell.1; sourceTree = "<group>"; };
@@ -60,6 +66,10 @@
 			children = (
 				FCBD1A40149298F9003A7EDF /* main.c */,
 				FCBD1A42149298F9003A7EDF /* MyShell.1 */,
+				FC25F67F1492E9EB003A3B78 /* builtin.h */,
+				FC25F67E1492E9EB003A3B78 /* builtin.c */,
+				FC25F6831492E9F7003A3B78 /* commands.h */,
+				FC25F6821492E9F7003A3B78 /* commands.c */,
 			);
 			path = MyShell;
 			sourceTree = "<group>";
@@ -115,6 +125,8 @@
 			buildActionMask = 2147483647;
 			files = (
 				FCBD1A41149298F9003A7EDF /* main.c in Sources */,
+				FC25F6801492E9EB003A3B78 /* builtin.c in Sources */,
+				FC25F6841492E9F7003A3B78 /* commands.c in Sources */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
@@ -194,6 +206,7 @@
 				FCBD1A47149298F9003A7EDF /* Release */,
 			);
 			defaultConfigurationIsVisible = 0;
+			defaultConfigurationName = Release;
 		};
 /* End XCConfigurationList section */
 	};
