@@ -18,6 +18,15 @@
 #define BASEHOMEDIRECTORY "/home/"
 #endif
 
+/********************************************************************************
+ * Function name  : void pwd()                                                  *
+ *                                                                              *
+ * Created by     : James Johns                                                 *
+ * Date created   : 14/12/2011                                                  *
+ * Description    : Print the current working directory to stdout               *
+ *                                                                              *
+ * NOTES          :                                                             *
+ ********************************************************************************/
 void pwd() {
 	char *path = (char *)malloc(sizeof(char)*MAXPATHLENGTH);
 	getwd(path);
@@ -25,6 +34,19 @@ void pwd() {
 	free(path);
 }
 
+/********************************************************************************
+ * Function name  : void cd(char *directory)                                    *
+ *         directory  : Path to new working directory.                          *
+ *                                                                              *
+ * Created by     : James Johns                                                 *
+ * Date created   : 14/12/2011                                                  *
+ * Description    : Change the current working directory to the specified       *
+ *                  directory.                                                  *
+ *                                                                              *
+ * NOTES          : TODO - Implement home directory discovery for automatic     *
+ *                         navigation to true home directory instead of place   *
+ *                         holder home directory                                *
+ ********************************************************************************/
 void cd(char *directory) {
 	/* if we are not given a directory, return to home directory */
 	if (directory == NULL || strcmp(directory, "") == 0)
