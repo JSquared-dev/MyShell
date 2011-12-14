@@ -108,6 +108,9 @@ int executeCommand(struct command_s *command) {
 	if (strcmp(command->utility, "pwd") == 0) {
 		pwd();
 	}
+	else if (strcmp(command->utility, "cd") == 0) {
+		cd("");
+	}
 	else if (strcmp(command->utility, "quit") == 0) {
 		return -1;
 	}
