@@ -30,7 +30,7 @@ int main (int argc, const char * argv[])
 		struct command_s *command = interpretCommand(commandLine);
 		if (command) {
 			commandReturn = executeCommand(command);
-			free(command);
+			destroyCommand(command);
 		}
 	}
 	free(commandLine);

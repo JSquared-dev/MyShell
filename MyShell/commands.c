@@ -16,8 +16,8 @@
 /********************************************************************************
  * Function name  : int interpretCommand(char *buffer, FILE *source)            *
  *     returns    : zero on success, non-zero on failure                        *
- *         buffer     : An array of MAXCOMMANDLENGTH in size to store command   *
- *                      line contents in for later processing.                  *
+ *         buffer     : A char array of MAXCOMMANDLENGTH in size to store       *
+ *                      command line contents in for later processing.          *
  *         source     : File handle to read command line input from. If NULL is *
  *                      passed, stdin is used instead.                          *
  *                                                                              *
@@ -30,8 +30,6 @@
  ********************************************************************************/
 int readCommandLine(char *buffer, FILE *source) {
 	printf("\n >");		/* command prompt character */
-	if (buffer == NULL)
-		buffer = malloc(sizeof(char)*MAXCOMMANDLENGTH);
 	if (source == NULL)
 		source = stdin;
 	
@@ -142,3 +140,26 @@ int executeCommand(struct command_s *command) {
 	}
 	return 0;
 }
+
+
+/********************************************************************************
+ * Function name  : int destroyCommand(struct command_s *command)               *
+ *         command   : command structure to destroy by freeing all allocated    *
+ *                     memory within it                                         *
+ *                                                                              *
+ * Created by     : James Johns                                                 *
+ * Date created   : 10/12/2011                                                  *
+ * Description    : Free all memory allocated to the structure by other command *
+ *                  functions such as interpretCommand()                        *
+ *                                                                              *
+ * NOTES          :                                                             *
+ ********************************************************************************/
+void destroyCommand(struct command_s *command) {
+	
+	for (int i = 0; i < command->argc; i++){
+		free(command->argv[i]);
+	}
+	free(command->utility);
+	free(command);
+}
+

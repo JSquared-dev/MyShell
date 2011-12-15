@@ -23,5 +23,6 @@ struct command_s {
 int readCommandLine(char *command, FILE *source);
 struct command_s *interpretCommand(char *commandLine);
 int executeCommand(struct command_s *command);
+void destroyCommand(struct command_s *command);
 
 #endif
