@@ -12,11 +12,12 @@
 #include <stdio.h>
 
 #define MAXCOMMANDLENGTH 1024
+#define MAXARGUMENTCOUNT 64
 
 struct command_s {
-	char *utility;
-	unsigned int argc;
-	char **argv;
+	char *utility; /* name of command requested to be run */
+	unsigned int argc; /* number of arguments in argv */
+	char **argv; /* array of string arguments to pass to utility */
 };
 
 int readCommandLine(char *command, FILE *source);
