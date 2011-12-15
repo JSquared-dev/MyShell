@@ -76,11 +76,34 @@ struct command_s *interpretCommand(char *commandLine) {
 		toRet->utility = malloc(sizeof(char)*i);
 		strncpy(toRet->utility, commandLine, i);
 		
-		while (commandLine[i] != '\n' && i < strlen(commandLine)) {
-			if (commandLine[i] == ' ') {
-					// tokenise here
-			}
+		/* if we hit a new line, then there is no more command to interpret. otherwise iterate past
+		 * command utility and start parsing  */
+		if (commandLine[i] == '\n')
+			return toRet;
+		else
 			i++;
+		char *tempStore[MAXARGUMENTCOUNT];
+		unsigned int startOfToken = i;
+		/* loop until we reach the end of the string or we hit a new line character
+		 * tokenising the string at each space character */
+		while ((commandLine[i] != '\n') && (i < strlen(commandLine))) {
+			i++;
+			if (commandLine[i] == ' ' || commandLine[i] == '\n') {
+					// tokenise here
+				unsigned int stringlength = (i-startOfToken);
+				tempStore[toRet->argc] = malloc(sizeof(char)*(stringlength+1));
+				strncpy(tempStore[toRet->argc], &commandLine[startOfToken], stringlength);
+				tempStore[toRet->argc][stringlength] = '\0';
+				toRet->argc++;
+				startOfToken = i;
+			}
+		}
+		
+		toRet->argv = (char **) malloc(sizeof(char *)*(toRet->argc));
+		for (int i = 0; i < toRet->argc; i++) {
+			toRet->argv[i] = malloc(sizeof(char)*strlen(tempStore[i]));
+			strncpy(toRet->argv[i], tempStore[i], strlen(tempStore[i]));
+			free(tempStore[i]);
 		}
 	}
 	return toRet;
