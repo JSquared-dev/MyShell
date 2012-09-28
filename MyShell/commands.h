@@ -1,10 +1,14 @@
-//
-//  commands.h
-//  MyShell
-//
-//  Created by James Johns on 10/12/2011.
-//  Copyright 2011 xD-Duncesoft. All rights reserved.
-//
+/****************************************************************************************
+ * File name	: commands.h
+ *
+ * Created by	: James Johns
+ * Date created	: 10/12/2011
+ *
+ * Description	: Command input, parsing and execution.
+ *
+ * NOTES		:	TODO - Tidy up command_s structure to allow piping, command 
+ *							arguments and extensibility.
+ ****************************************************************************************/
 
 #ifndef _COMMANDS_H_
 #define _COMMANDS_H_

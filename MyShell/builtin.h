@@ -1,10 +1,14 @@
-//
-//  builtin.h
-//  MyShell
-//
-//  Created by James Johns on 10/12/2011.
-//  Copyright 2011 xD-Duncesoft. All rights reserved.
-//
+/****************************************************************************************
+ * File name	: builtin.h
+ *
+ * Created by	: James Johns
+ * Date created	: 10/12/2011
+ *
+ * Description	: Built-in functionality resides in here, such as pwd, ls, cd commands etc.
+ *
+ * NOTES		:	TODO - Create ls and ps commands.
+ *					TODO - Create fork/exec command for running non-built-in commands.
+ ****************************************************************************************/
 
 #ifndef _BUILTIN_H_
 #define _BIULTIN_H_

@@ -1,10 +1,16 @@
-//
-//  commands.c
-//  MyShell
-//
-//  Created by James Johns on 10/12/2011.
-//  Copyright 2011 xD-Duncesoft. All rights reserved.
-//
+/****************************************************************************************
+ * File name	: commands.c
+ *
+ * Created by	: James Johns
+ * Date created	: 10/12/2011
+ *
+ * Description	: Command input, parsing and execution.
+ *
+ * NOTES		:	TODO - Create pipes to allow output from one command to be the input 
+ *							of another when using the pipe delimiter (|).
+ *					TODO - Tidy up memory allocations to allocate necessary amount of 
+ *							data instead of limited lengths.
+ ****************************************************************************************/
 
 #include "commands.h"
 #include "builtin.h"
@@ -14,19 +20,19 @@
 
 
 /********************************************************************************
- * Function name  : int interpretCommand(char *buffer, FILE *source)            *
- *     returns    : zero on success, non-zero on failure                        *
- *         buffer     : A char array of MAXCOMMANDLENGTH in size to store       *
- *                      command line contents in for later processing.          *
- *         source     : File handle to read command line input from. If NULL is *
- *                      passed, stdin is used instead.                          *
- *                                                                              *
- * Created by     : James Johns                                                 *
- * Date created   : 10/12/2011                                                  *
- * Description    : Copies the contents of source into buffer line by line      *
- *                  (on subsequent calls, each line is read in order).          *
- *                                                                              *
- * NOTES          :                                                             *
+ * Function name  : int interpretCommand(char *buffer, FILE *source)
+ *     returns    : zero on success, non-zero on failure
+ *         buffer     : A char array of MAXCOMMANDLENGTH in size to store
+ *                      command line contents in for later processing.
+ *         source     : File handle to read command line input from. If NULL is
+ *                      passed, stdin is used instead.
+ * 
+ * Created by     : James Johns
+ * Date created   : 10/12/2011
+ * Description    : Copies the contents of source into buffer line by line
+ *                  (on subsequent calls, each line is read in order).
+ *
+ * NOTES          : 
  ********************************************************************************/
 int readCommandLine(char *buffer, FILE *source) {
 	printf("\n >");		/* command prompt character */
@@ -42,21 +48,21 @@ int readCommandLine(char *buffer, FILE *source) {
 
 
 /********************************************************************************
- * Function name  : struct command_s *interpretCommand(char *commandLine)       *
- *     returns    : pointer to a command_s structure containing all command     *
- *                  data, ready to be passed to executeCommand()                *
- *         commandLine   : command line input to tokenise and return in command *
- *                         structure                                            *
- *                                                                              *
- * Created by     : James Johns                                                 *
- * Date created   : 10/12/2011                                                  *
- * Description    : tokenises commandLine by whitespace. first token is command *
- *                  utility, followed by arguments                              *
- *                                                                              *
- *                  returns tokens in command_s structure which needs           *
- *                  deallocating when no longer needed.                         *
- *                                                                              *
- * NOTES          : List TODOs, FIXES, BUGS, etc.                               *
+ * Function name  : struct command_s *interpretCommand(char *commandLine)
+ *     returns    : pointer to a command_s structure containing all command
+ *                  data, ready to be passed to executeCommand()
+ *         commandLine   : command line input to tokenise and return in command
+ *                         structure
+ *
+ * Created by     : James Johns
+ * Date created   : 10/12/2011
+ * Description    : tokenises commandLine by whitespace. first token is command
+ *                  utility, followed by arguments
+ *
+ *                  returns tokens in command_s structure which needs
+ *                  deallocating when no longer needed.
+ *
+ * NOTES          : 
  ********************************************************************************/
 struct command_s *interpretCommand(char *commandLine) {
 	
@@ -109,21 +115,21 @@ struct command_s *interpretCommand(char *commandLine) {
 
 
 /********************************************************************************
- * Function name  : int executeCommand(struct command_s *command)               *
- *     returns    : zero on success, non zero on error                          *
- *         command   : command_s structure as generated by interpretCommand()   *
- *                                                                              *
- * Created by     : James Johns                                                 *
- * Date created   : 10/12/2011                                                  *
- * Description    : Compare the utility described by command to several         *
- *                  builtins before attempting to run an  external executable   *
- *                  via fork/exec call.                                         *
- *                                                                              *
- * NOTES          : TODO - implement external executable calls via fork/exec    *
- *                  TODO - free command automagically since we allocated it     *
- *                         here in the first place. user may or may not         *
- *                         understand exactly what structure fields have been   *
- *                         dynamically allocated.                               *
+ * Function name  : int executeCommand(struct command_s *command)
+ *     returns    : zero on success, non zero on error
+ *         command   : command_s structure as generated by interpretCommand()
+ *
+ * Created by     : James Johns
+ * Date created   : 10/12/2011
+ * Description    : Compare the utility described by command to several
+ *                  builtins before attempting to run an  external executable
+ *                  via fork/exec call.
+ *
+ * NOTES          : TODO - implement external executable calls via fork/exec
+ *                  TODO - free command automagically since we allocated it
+ *                         here in the first place. user may or may not
+ *                         understand exactly what structure fields have been 
+ *                         dynamically allocated.
  ********************************************************************************/
 int executeCommand(struct command_s *command) {
 	if (strcmp(command->utility, "pwd") == 0) {
@@ -143,16 +149,16 @@ int executeCommand(struct command_s *command) {
 
 
 /********************************************************************************
- * Function name  : int destroyCommand(struct command_s *command)               *
- *         command   : command structure to destroy by freeing all allocated    *
- *                     memory within it                                         *
- *                                                                              *
- * Created by     : James Johns                                                 *
- * Date created   : 10/12/2011                                                  *
- * Description    : Free all memory allocated to the structure by other command *
- *                  functions such as interpretCommand()                        *
- *                                                                              *
- * NOTES          :                                                             *
+ * Function name  : int destroyCommand(struct command_s *command)
+ *         command   : command structure to destroy by freeing all allocated
+ *                     memory within it
+ *
+ * Created by     : James Johns
+ * Date created   : 10/12/2011
+ * Description    : Free all memory allocated to the structure by other command
+ *                  functions such as interpretCommand()
+ *
+ * NOTES          : 
  ********************************************************************************/
 void destroyCommand(struct command_s *command) {
 	

@@ -1,10 +1,14 @@
-//
-//  main.c
-//  MyShell
-//
-//  Created by James Johns on 09/12/2011.
-//  Copyright 2011 xD-Duncesoft. All rights reserved.
-//
+/****************************************************************************************
+ * File name	: main.c
+ *
+ * Created by	: James Johns
+ * Date created	: 10/12/2011
+ *
+ * Description	: Entry point for MyShell program. Runs a loop of reading command line 
+ *					input, parsing and executing commands until quit command is given.
+ *
+ * NOTES		:	
+ ****************************************************************************************/
 
 #include <stdio.h>
 #include <stdlib.h>
@@ -16,10 +20,8 @@
 #include "commands.h"
 
 
-int main (int argc, const char * argv[])
-{
+int main (int argc, const char * argv[]) {
 	
-		// insert code here...
 	int commandReturn = 0;
 	char *commandLine = malloc(sizeof(char)*MAXCOMMANDLENGTH);
 	for (int i = 0; i < MAXCOMMANDLENGTH; commandLine[i] = 0, i++);
