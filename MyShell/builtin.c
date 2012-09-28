@@ -13,13 +13,15 @@
 #include <string.h>
 
 #ifdef __APPLE__
-#define BASEHOMEDIRECTORY "/Users/"
+	#define BASEHOMEDIRECTORY "/Users/"
 #else
-#define BASEHOMEDIRECTORY "/home/"
+	#define BASEHOMEDIRECTORY "/home/"
 #endif
 
 /********************************************************************************
- * Function name  : void pwd()                                                  *
+ * Function name  : void pwd(int argc, char **argv)                             *
+ *             argc  : Number of elements in argv.                              *
+ *             argv  : Array of NULL terminated strings.                        *
  *                                                                              *
  * Created by     : James Johns                                                 *
  * Date created   : 14/12/2011                                                  *
@@ -27,7 +29,7 @@
  *                                                                              *
  * NOTES          :                                                             *
  ********************************************************************************/
-void pwd() {
+void pwd(int agrc, char **argv) {
 	char *path = (char *)malloc(sizeof(char)*MAXPATHLENGTH);
 	getwd(path);
 	printf("%s\n", path);
@@ -35,22 +37,27 @@ void pwd() {
 }
 
 /********************************************************************************
- * Function name  : void cd(char *directory)                                    *
- *         directory  : Path to new working directory.                          *
+ * Function name  : void cd(int argc, char **argv)                              *
+ *             argc  : Number of elements in argv.                              *
+ *             argv  : Array of NULL terminated strings.                        *
  *                                                                              *
  * Created by     : James Johns                                                 *
  * Date created   : 14/12/2011                                                  *
- * Description    : Change the current working directory to the specified       *
- *                  directory.                                                  *
+ * Description    : Change the current working directory as specified by argv.  *
  *                                                                              *
  * NOTES          : TODO - Implement home directory discovery for automatic     *
  *                         navigation to true home directory instead of place   *
  *                         holder home directory                                *
  ********************************************************************************/
-void cd(char *directory) {
+void cd(int argc, char **argv) {
 	/* if we are not given a directory, return to home directory */
-	if (directory == NULL || strcmp(directory, "") == 0)
-		chdir(BASEHOMEDIRECTORY);
-	else
-		chdir(directory);
+	char *directory;
+	if (argc != 0) {
+		directory = argv[0];
+	}
+	else {
+		directory = BASEHOMEDIRECTORY;
+	}
+	
+	chdir(directory);
 }

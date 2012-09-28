@@ -11,7 +11,7 @@
 
 #define MAXPATHLENGTH 1024
 
-void pwd();
-void cd(char *directory);
+void pwd(int argc, char **argv);
+void cd(int argc, char **argv);
 
 #endif

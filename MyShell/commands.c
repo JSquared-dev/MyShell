@@ -127,10 +127,10 @@ struct command_s *interpretCommand(char *commandLine) {
  ********************************************************************************/
 int executeCommand(struct command_s *command) {
 	if (strcmp(command->utility, "pwd") == 0) {
-		pwd();
+		pwd(command->argc, command->argv);
 	}
 	else if (strcmp(command->utility, "cd") == 0) {
-		cd("");
+		cd(command->argc, command->argv);
 	}
 	else if (strcmp(command->utility, "quit") == 0) {
 		return -1;
