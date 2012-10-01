@@ -19,9 +19,10 @@
 #define MAXARGUMENTCOUNT 64
 
 struct command_s {
-	char *utility; /* name of command requested to be run */
+//	char *utility; /* name of command requested to be run */
 	unsigned int argc; /* number of arguments in argv */
 	char **argv; /* array of string arguments to pass to utility */
+	struct command_s *next;
 };
 
 int readCommandLine(char *command, FILE *source);

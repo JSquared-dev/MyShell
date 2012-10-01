@@ -35,7 +35,7 @@
  *
  * NOTES          : 
  ********************************************************************************/
-void pwd(int agrc, char **argv) {
+void pwd(int argc, char **argv, int inputFD, int outputFD) {
 	char *path = (char *)malloc(sizeof(char)*MAXPATHLENGTH);
 	getwd(path);
 	printf("%s\n", path);
@@ -55,15 +55,50 @@ void pwd(int agrc, char **argv) {
  *                         navigation to true home directory instead of place
  *                         holder home directory
  ********************************************************************************/
-void cd(int argc, char **argv) {
+void cd(int argc, char **argv, int inputFD, int outputFD) {
 	/* if we are not given a directory, return to home directory */
 	char *directory;
-	if (argc != 0) {
-		directory = argv[0];
+	if (argc > 1) {
+		directory = argv[1];
 	}
 	else {
 		directory = BASEHOMEDIRECTORY;
 	}
 	
-	chdir(directory);
+	if (chdir(directory) != 0) 
+		perror("cd");
+}
+
+/********************************************************************************
+ * Function name  : void cexectureExternalCommand(int argc, char **argv, int inputFD, int outputFD)
+ *				argc	: Number of elements in argv.
+ *				argv	: Array of NULL terminated strings.
+ *				inputFD : input pipe file descriptor. can be a valid pipe() fd or stdin.
+ *				outputFD: output pipe file descriptor. can be a valid pipe() fd or stdout.
+ *
+ * Created by     : James Johns
+ * Date created   : 1/10/2012
+ * Description    : forks() a new process, and executes the given command if found on the current 
+ *						environment path.
+ *
+ * NOTES          : 
+ ********************************************************************************/
+void executeExternalCommand(int argc, char **argv, int inputFD, int outputFD) {
+	int pid = fork();
+	if (pid == 0) {
+		/* child. setup pipes for redirecting input/output */
+		inputFD = dup2(inputFD, 1);
+		outputFD = dup2(outputFD, 0);
+		/* execute command */
+		execvp(argv[0], &(argv[1]));
+		exit(1);
+	}
+	else if (pid > 0) {
+		/* wait for process to end */
+		waitpid(pid, NULL, 0);
+		printf("command ended successfully\n");
+	}
+	else {
+		perror("MyShell");
+	}
 }

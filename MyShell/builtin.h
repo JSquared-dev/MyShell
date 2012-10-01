@@ -15,7 +15,9 @@
 
 #define MAXPATHLENGTH 1024
 
-void pwd(int argc, char **argv);
-void cd(int argc, char **argv);
+void pwd(int argc, char **argv, int inputFD, int outputFD);
+void cd(int argc, char **argv, int inputFD, int outputFD);
+
+void executeExternalCommand(int argc, char **argv, int inputFD, int outputFD);
 
 #endif

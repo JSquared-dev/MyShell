@@ -17,6 +17,7 @@
 #include <stdlib.h>
 #include <stdio.h>
 #include <string.h>
+#include <unistd.h>
 
 
 /********************************************************************************
@@ -67,18 +68,28 @@ int readCommandLine(char *buffer, FILE *source) {
 struct command_s *interpretCommand(char *commandLine) {
 	
 	struct command_s *toRet = malloc(sizeof(struct command_s));
-	toRet->utility = NULL;
-	toRet->argc = 0;
-	toRet->argv = NULL;
 	
-	if (toRet) {
+	if (toRet == NULL) {
+		perror("interpretCommand() malloc error");
+	}
+	else {
+		toRet->next = NULL;
+		toRet->argc = 0;
+		toRet->argv = malloc(sizeof(char *));
+		if (toRet->argv == NULL) {
+			perror("interpretCommand() malloc error");
+			free(toRet);
+			return NULL;
+		}
 		int i;
 		/* isolate command from the input */
-		for (i = 0; i < strlen(commandLine) && commandLine[i] != ' ' &&
-					commandLine[i] != '\n'; i++); /* count through characters until we reach the end 
-												   * of the string or a tokenising character */
-		toRet->utility = malloc(sizeof(char)*i);
-		strncpy(toRet->utility, commandLine, i);
+		for (i = 0; i < strlen(commandLine) && commandLine[i] != ' ' && 
+			 commandLine[i] != '\n'; i++); /* count through characters until we reach the end 
+											* of the string or a tokenising character */
+		
+		toRet->argv[0] = malloc(sizeof(char)*i);
+		toRet->argc++;
+		strncpy(toRet->argv[0], commandLine, i);
 		
 		/* if we hit a new line, then there is no more command to interpret. otherwise iterate past
 		 * command utility and start parsing  */
@@ -86,8 +97,11 @@ struct command_s *interpretCommand(char *commandLine) {
 			return toRet;
 		else
 			i++;
+		
+		/* temporary argument storage. ready to copy into a perfect sized array later on */
 		char *tempStore[MAXARGUMENTCOUNT];
 		unsigned int startOfToken = i;
+		
 		/* loop until we reach the end of the string or we hit a new line character
 		 * tokenising the string at each space character */
 		while ((commandLine[i] != '\n') && (i < strlen(commandLine))) {
@@ -101,13 +115,22 @@ struct command_s *interpretCommand(char *commandLine) {
 				toRet->argc++;
 				startOfToken = i;
 			}
+			else if (commandLine[i] == '|') {
+				/* create a new command to link to. */
+				toRet->next = interpretCommand(&commandLine[i+1]);
+				break;
+			}
 		}
 		
-		toRet->argv = (char **) malloc(sizeof(char *)*(toRet->argc));
-		for (int i = 0; i < toRet->argc; i++) {
-			toRet->argv[i] = malloc(sizeof(char)*strlen(tempStore[i]));
-			strncpy(toRet->argv[i], tempStore[i], strlen(tempStore[i]));
-			free(tempStore[i]);
+		/* copy arguments into command structure */
+		if (toRet->argc > 1) {
+			toRet->argv = (char **) realloc(toRet->argv, sizeof(char *)*(toRet->argc));
+			/* loop through tempStore, copying all strings across to argv */
+			for (int j = 1; j < toRet->argc; j++) {
+				toRet->argv[j] = malloc(sizeof(char)*strlen(tempStore[j]));
+				strncpy(toRet->argv[j], tempStore[j], strlen(tempStore[j]));
+				free(tempStore[j]);
+			}
 		}
 	}
 	return toRet;
@@ -132,17 +155,49 @@ struct command_s *interpretCommand(char *commandLine) {
  *                         dynamically allocated.
  ********************************************************************************/
 int executeCommand(struct command_s *command) {
-	if (strcmp(command->utility, "pwd") == 0) {
-		pwd(command->argc, command->argv);
+	int inputFD, outputFD;
+	inputFD = fileno(stdin);
+	outputFD = fileno(stdout);
+	if (strcmp(command->argv[0], "pwd") == 0) {
+		pwd(command->argc, command->argv, inputFD, outputFD);
 	}
-	else if (strcmp(command->utility, "cd") == 0) {
-		cd(command->argc, command->argv);
+	else if (strcmp(command->argv[0], "cd") == 0) {
+		cd(command->argc, command->argv, inputFD, outputFD);
 	}
-	else if (strcmp(command->utility, "quit") == 0) {
+	else if ((strcmp(command->argv[0], "quit") == 0) || (strcmp(command->argv[0], "exit") == 0)) {
 		return -1;
 	}
 	else {
-		printf("No fork/exec implemented yet. Cannot test environment for available utilities");
+//		printf("No fork/exec implemented yet. Cannot test environment for available utilities");
+		int previousOutputPipe = inputFD;
+		do {
+			int readpipe[2], writepipe[2];
+			if (pipe(readpipe) == -1)
+				perror("pipe");
+			if (pipe(writepipe) == -1)
+				perror("pipe");
+			
+			/* setup input pipe to be the output of previous command pipe set, then close old output pipe */
+			readpipe[0] = dup2(previousOutputPipe, readpipe[0]);
+			if (readpipe[0] == -1)
+				perror("dup2");
+			if(previousOutputPipe != inputFD)
+				close(previousOutputPipe);
+			
+			/* if end of command string, print final output. otherwise continue redirection */
+			if (command->next == NULL) {
+				/* bind writepipe[0] to stdout */
+				writepipe[0] = dup2(outputFD, writepipe[0]);
+			}
+			else {
+				previousOutputPipe = writepipe[0];
+			}
+
+			executeExternalCommand(command->argc, command->argv, readpipe[0], writepipe[1]);
+			close (readpipe[0]);
+			close (readpipe[1]);
+			close (writepipe[1]);
+		} while (command->next != NULL && (command = command->next));
 	}
 	return 0;
 }
@@ -165,7 +220,7 @@ void destroyCommand(struct command_s *command) {
 	for (int i = 0; i < command->argc; i++){
 		free(command->argv[i]);
 	}
-	free(command->utility);
+	free(command->argv);
 	free(command);
 }
 
