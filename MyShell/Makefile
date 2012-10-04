@@ -1,6 +1,6 @@
 
 
-OBJECTS := main.o command.o builtins.o
+OBJECTS := main.o commands.o builtin.o
 
 
 all: shell
@@ -13,4 +13,4 @@ shell: $(OBJECTS)
 	gcc -lc -o $@ $(OBJECTS)
 
 .c.o:
-	gcc --c99 -c -g -o $@ $<
+	gcc --std=c99 -c -g -o $@ $<
