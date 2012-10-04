@@ -37,8 +37,12 @@
  ********************************************************************************/
 void pwd(int argc, char **argv, int inputFD, int outputFD) {
 	char *path = (char *)malloc(sizeof(char)*MAXPATHLENGTH);
-	getwd(path);
-	printf("%s\n", path);
+	if (getwd(path) == NULL) {
+	  perror("getwd");
+	}
+	else {
+	  printf("%s\n", path);
+	}
 	free(path);
 }
 
@@ -62,7 +66,7 @@ void cd(int argc, char **argv, int inputFD, int outputFD) {
 		directory = argv[1];
 	}
 	else {
-		directory = BASEHOMEDIRECTORY;
+	  directory = getenv("HOME");
 	}
 	
 	if (chdir(directory) != 0) 
@@ -90,7 +94,7 @@ void executeExternalCommand(int argc, char **argv, int inputFD, int outputFD) {
 		inputFD = dup2(inputFD, 1);
 		outputFD = dup2(outputFD, 0);
 		/* execute command */
-		execvp(argv[0], &(argv[1]));
+		execvp(argv[0], argv);
 		exit(1);
 	}
 	else if (pid > 0) {
