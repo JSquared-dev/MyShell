@@ -169,6 +169,7 @@ int executeCommand(struct command_s *command) {
 	}
 	else {
 //		printf("No fork/exec implemented yet. Cannot test environment for available utilities");
+	  if (command->next != NULL) {
 		int previousOutputPipe = inputFD;
 		do {
 			int readpipe[2], writepipe[2];
@@ -198,6 +199,10 @@ int executeCommand(struct command_s *command) {
 			close (readpipe[1]);
 			close (writepipe[1]);
 		} while (command->next != NULL && (command = command->next));
+	  }
+	  else {
+	    executeExternalCommand(command->argc, command->argv, stdin, stdout);
+	  }
 	}
 	return 0;
 }
