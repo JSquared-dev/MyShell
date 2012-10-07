@@ -70,14 +70,14 @@ struct command_s *interpretCommand(char *commandLine) {
 	struct command_s *toRet = malloc(sizeof(struct command_s));
 	
 	if (toRet == NULL) {
-		perror("interpretCommand() malloc error");
+		perror("interpretCommand: malloc");
 	}
 	else {
 		toRet->next = NULL;
 		toRet->argc = 0;
-		toRet->argv = malloc(sizeof(char *));
+		toRet->argv = malloc(sizeof(char *)*2);
 		if (toRet->argv == NULL) {
-			perror("interpretCommand() malloc error");
+			perror("interpretCommand: malloc");
 			free(toRet);
 			return NULL;
 		}
@@ -90,6 +90,7 @@ struct command_s *interpretCommand(char *commandLine) {
 		toRet->argv[0] = malloc(sizeof(char)*i);
 		toRet->argc++;
 		strncpy(toRet->argv[0], commandLine, i);
+		toRet->argv[1] = NULL; /* make sure even for single commands, argv[] ends in a NULL pointer */
 		
 		/* if we hit a new line, then there is no more command to interpret. otherwise iterate past
 		 * command utility and start parsing  */
@@ -124,13 +125,14 @@ struct command_s *interpretCommand(char *commandLine) {
 		
 		/* copy arguments into command structure */
 		if (toRet->argc > 1) {
-			toRet->argv = (char **) realloc(toRet->argv, sizeof(char *)*(toRet->argc));
+			toRet->argv = realloc(toRet->argv, sizeof(char *)*(toRet->argc+1));
 			/* loop through tempStore, copying all strings across to argv */
 			for (int j = 1; j < toRet->argc; j++) {
 				toRet->argv[j] = malloc(sizeof(char)*strlen(tempStore[j]));
 				strncpy(toRet->argv[j], tempStore[j], strlen(tempStore[j]));
 				free(tempStore[j]);
 			}
+			toRet->argv[toRet->argc] = NULL;
 		}
 	}
 	return toRet;
@@ -168,41 +170,31 @@ int executeCommand(struct command_s *command) {
 		return -1;
 	}
 	else {
-//		printf("No fork/exec implemented yet. Cannot test environment for available utilities");
-	  if (command->next != NULL) {
+		printf("Executing fork/exec for command: %s\n", command->argv[0]);
 		int previousOutputPipe = inputFD;
 		do {
-			int readpipe[2], writepipe[2];
-			if (pipe(readpipe) == -1)
-				perror("pipe");
-			if (pipe(writepipe) == -1)
+			int datapipe[2];
+			if (pipe(datapipe) == -1)
 				perror("pipe");
 			
-			/* setup input pipe to be the output of previous command pipe set, then close old output pipe */
-			readpipe[0] = dup2(previousOutputPipe, readpipe[0]);
-			if (readpipe[0] == -1)
-				perror("dup2");
-			if(previousOutputPipe != inputFD)
-				close(previousOutputPipe);
-			
+			/* link the new input pipe to the old output pipe. */
 			/* if end of command string, print final output. otherwise continue redirection */
 			if (command->next == NULL) {
-				/* bind writepipe[0] to stdout */
-				writepipe[0] = dup2(outputFD, writepipe[0]);
+				/* close datapipe[0] and use stdout for process output */
+				close (datapipe[0]);
+				datapipe[0] = outputFD;
 			}
 			else {
-				previousOutputPipe = writepipe[0];
+				/* store the output pipe to link to the next input pipe. */
+				close(previousOutputPipe);
+				previousOutputPipe = datapipe[0];
 			}
-
-			executeExternalCommand(command->argc, command->argv, readpipe[0], writepipe[1]);
-			close (readpipe[0]);
-			close (readpipe[1]);
-			close (writepipe[1]);
+			
+			executeExternalCommand(command->argc, command->argv, previousOutputPipe, datapipe[1]);
+			close(datapipe[1]);
 		} while (command->next != NULL && (command = command->next));
-	  }
-	  else {
-	    executeExternalCommand(command->argc, command->argv, stdin, stdout);
-	  }
+		if (previousOutputPipe != inputFD)
+			close(previousOutputPipe);
 	}
 	return 0;
 }
