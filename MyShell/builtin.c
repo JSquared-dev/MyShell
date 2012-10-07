@@ -82,7 +82,7 @@ void cd(int argc, char **argv, int inputFD, int outputFD) {
  *
  * Created by     : James Johns
  * Date created   : 1/10/2012
- * Description    : forks() a new process, and executes the given command if found on the current 
+ * Description    : fork()s a new process, and executes the given command if found on the current 
  *						environment path.
  *
  * NOTES          : 
@@ -95,12 +95,12 @@ void executeExternalCommand(int argc, char **argv, int inputFD, int outputFD) {
 		outputFD = dup2(outputFD, 0);
 		/* execute command */
 		execvp(argv[0], argv);
+		perror("execvp");
 		exit(1);
 	}
 	else if (pid > 0) {
 		/* wait for process to end */
 		waitpid(pid, NULL, 0);
-		printf("command ended successfully\n");
 	}
 	else {
 		perror("MyShell");

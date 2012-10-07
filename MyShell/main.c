@@ -33,6 +33,10 @@ int main (int argc, const char * argv[]) {
 		if (command) {
 			commandReturn = executeCommand(command);
 			destroyCommand(command);
+			command = NULL;
+		}
+		else {
+			fprintf(stderr,"error interpretting command\n");
 		}
 	}
 	free(commandLine);
