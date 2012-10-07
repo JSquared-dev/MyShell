@@ -116,28 +116,35 @@ struct command_s *interpretCommand(char *commandLine) {
 		
 		/* loop until we reach the end of the string or we hit a new line character
 		 * tokenising the string at each space character */
-		while ((commandLine[i] != '\n') && (i < strlen(commandLine))) {
-			if (commandLine[i] == ' ' || commandLine[i] == '\n') {
-				/* tokenise command arguments here, unless another separator is found. i.e. | or ; */
-				if (commandLine[i+1] == '|') {
-					toRet->next = interpretCommand(&commandLine[i+2]);
-					break;
-				}
-				else {
-					unsigned int stringlength = (i-startOfToken);
-					tempStore[toRet->argc] = malloc(sizeof(char)*(stringlength+1));
-					strncpy(tempStore[toRet->argc], &commandLine[startOfToken], stringlength);
-					tempStore[toRet->argc][stringlength] = '\0';
+		while (i < strlen(commandLine)) {
+			switch (commandLine[i]) {
+				case ' ':
+				case '\n':
+				case '\0':
+					/* if 2 separators are found next to eachother, ignore the first separator and 
+					 * use the second as the startOfToken point. */
+					if (i == startOfToken) {
+						i++;
+						startOfToken = i;
+						break;
+					}
+					/* create a token from string */
+					tempStore[toRet->argc] = malloc(sizeof(char)*(i-startOfToken)+1);
+					strncpy(tempStore[toRet->argc],commandLine+startOfToken,i-startOfToken);
+					tempStore[i-startOfToken] = '\0';
 					toRet->argc++;
+					/* set records to beginning of the next possible token */
 					startOfToken = i;
-				}
+					break;
+				case '|':
+					toRet->next = interpretCommand(commandLine+i+1);
+					i = strlen(commandLine);
+					break;
+					
+				default:
+					i++;
+					break;
 			}
-			else if (commandLine[i] == '|') {
-				/* create a new command to link to. */
-				toRet->next = interpretCommand(&commandLine[i+1]);
-				break;
-			}
-			i++;
 		}
 		
 		/* copy arguments into command structure */
@@ -145,9 +152,7 @@ struct command_s *interpretCommand(char *commandLine) {
 			toRet->argv = realloc(toRet->argv, sizeof(char *)*(toRet->argc+1));
 			/* loop through tempStore, copying all strings across to argv */
 			for (int j = 1; j < toRet->argc; j++) {
-				toRet->argv[j] = malloc(sizeof(char)*strlen(tempStore[j]));
-				strncpy(toRet->argv[j], tempStore[j], strlen(tempStore[j]));
-				free(tempStore[j]);
+				toRet->argv[j] = tempStore[j];
 			}
 			toRet->argv[toRet->argc] = NULL;
 		}
@@ -187,29 +192,33 @@ int executeCommand(struct command_s *command) {
 		return -1;
 	}
 	else {
-		printf("Executing fork/exec for command: %s\n", command->argv[0]);
 		int previousOutputPipe = inputFD;
-		do {
+		while (command != NULL) {
+			printf("Executing fork/exec for command: %s\n", command->argv[0]);
 			int datapipe[2];
-			if (pipe(datapipe) == -1)
+			if (pipe(datapipe) == -1) {
 				perror("pipe");
+				return 1;
+			}
 			
-			/* link the new input pipe to the old output pipe. */
 			/* if end of command string, print final output. otherwise continue redirection */
 			if (command->next == NULL) {
 				/* close datapipe[0] and use stdout for process output */
 				close (datapipe[0]);
 				datapipe[0] = outputFD;
 			}
-			else {
-				/* store the output pipe to link to the next input pipe. */
-				close(previousOutputPipe);
-				previousOutputPipe = datapipe[0];
-			}
 			
 			executeExternalCommand(command->argc, command->argv, previousOutputPipe, datapipe[1]);
+			
+			/* save read end of current pipe for use as an input in the next command. */
+			if (previousOutputPipe != inputFD) {
+				close(previousOutputPipe);
+			}
+			previousOutputPipe = datapipe[0];
+			/* write end of pipe is no longer required */
 			close(datapipe[1]);
-		} while (command->next != NULL && (command = command->next));
+			command = command->next;
+		}
 		if (previousOutputPipe != inputFD)
 			close(previousOutputPipe);
 	}
