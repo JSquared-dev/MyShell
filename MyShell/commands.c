@@ -68,6 +68,9 @@ int readCommandLine(char *buffer, FILE *source) {
 struct command_s *interpretCommand(char *commandLine) {
 	
 	struct command_s *toRet = malloc(sizeof(struct command_s));
+	/* temporary argument storage. ready to copy into a perfect sized array later on */
+	char *tempStore[MAXARGUMENTCOUNT];
+	unsigned int startOfToken = 0;
 	
 	if (toRet == NULL) {
 		perror("interpretCommand: malloc");
@@ -81,46 +84,60 @@ struct command_s *interpretCommand(char *commandLine) {
 			free(toRet);
 			return NULL;
 		}
-		int i;
-		/* isolate command from the input */
-		for (i = 0; i < strlen(commandLine) && commandLine[i] != ' ' && 
+		
+		int i = 0;
+		/* ignore leading whitespace */
+		while ((i < strlen(commandLine)) && ((commandLine[i] == ' ') || (commandLine[i] == '\n')))
+			i++;
+		
+		if (i == strlen(commandLine)) {
+			/* no command to parse, so ignore it and return NULL */
+			fprintf(stderr, "Empty command detected\n");
+			free(toRet);
+			toRet = NULL;
+			return NULL;
+		}
+		startOfToken = i;
+		
+		/* could characters in command name, ready to allocate required space. */
+		for (; i < strlen(commandLine) && commandLine[i] != ' ' && 
 			 commandLine[i] != '\n'; i++); /* count through characters until we reach the end 
 											* of the string or a tokenising character */
 		
-		toRet->argv[0] = malloc(sizeof(char)*i);
+		
+		toRet->argv[0] = malloc(sizeof(char)*(i - startOfToken)+1);
 		toRet->argc++;
-		strncpy(toRet->argv[0], commandLine, i);
+		strncpy(toRet->argv[0], commandLine+startOfToken, (i-startOfToken));
+		toRet->argv[0][i] = '\0';
 		toRet->argv[1] = NULL; /* make sure even for single commands, argv[] ends in a NULL pointer */
 		
-		/* if we hit a new line, then there is no more command to interpret. otherwise iterate past
-		 * command utility and start parsing  */
-		if (commandLine[i] == '\n')
-			return toRet;
-		else
-			i++;
-		
-		/* temporary argument storage. ready to copy into a perfect sized array later on */
-		char *tempStore[MAXARGUMENTCOUNT];
-		unsigned int startOfToken = i;
+		i++;
+		startOfToken = i;
 		
 		/* loop until we reach the end of the string or we hit a new line character
 		 * tokenising the string at each space character */
 		while ((commandLine[i] != '\n') && (i < strlen(commandLine))) {
-			i++;
 			if (commandLine[i] == ' ' || commandLine[i] == '\n') {
-					// tokenise here
-				unsigned int stringlength = (i-startOfToken);
-				tempStore[toRet->argc] = malloc(sizeof(char)*(stringlength+1));
-				strncpy(tempStore[toRet->argc], &commandLine[startOfToken], stringlength);
-				tempStore[toRet->argc][stringlength] = '\0';
-				toRet->argc++;
-				startOfToken = i;
+				/* tokenise command arguments here, unless another separator is found. i.e. | or ; */
+				if (commandLine[i+1] == '|') {
+					toRet->next = interpretCommand(&commandLine[i+2]);
+					break;
+				}
+				else {
+					unsigned int stringlength = (i-startOfToken);
+					tempStore[toRet->argc] = malloc(sizeof(char)*(stringlength+1));
+					strncpy(tempStore[toRet->argc], &commandLine[startOfToken], stringlength);
+					tempStore[toRet->argc][stringlength] = '\0';
+					toRet->argc++;
+					startOfToken = i;
+				}
 			}
 			else if (commandLine[i] == '|') {
 				/* create a new command to link to. */
 				toRet->next = interpretCommand(&commandLine[i+1]);
 				break;
 			}
+			i++;
 		}
 		
 		/* copy arguments into command structure */
