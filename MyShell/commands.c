@@ -87,9 +87,10 @@ struct command_s *interpretCommand(char *commandLine) {
 			 commandLine[i] != '\n'; i++); /* count through characters until we reach the end 
 											* of the string or a tokenising character */
 		
-		toRet->argv[0] = malloc(sizeof(char)*i);
+		toRet->argv[0] = malloc(sizeof(char)*(i+1));
 		toRet->argc++;
 		strncpy(toRet->argv[0], commandLine, i);
+		toRet->argv[0][i] = NULL;
 		toRet->argv[1] = NULL; /* make sure even for single commands, argv[] ends in a NULL pointer */
 		
 		/* if we hit a new line, then there is no more command to interpret. otherwise iterate past
