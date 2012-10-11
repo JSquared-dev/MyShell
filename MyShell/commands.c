@@ -90,7 +90,7 @@ struct command_s *interpretCommand(char *commandLine) {
 		while ((i < strlen(commandLine)) && ((commandLine[i] == ' ') || (commandLine[i] == '\n')))
 			i++;
 		
-		if (i == strlen(commandLine)) {
+		if (i >= strlen(commandLine)) {
 			/* no command to parse, so ignore it and return NULL */
 			fprintf(stderr, "Empty command detected\n");
 			free(toRet);
@@ -101,14 +101,13 @@ struct command_s *interpretCommand(char *commandLine) {
 		
 		/* could characters in command name, ready to allocate required space. */
 		for (; i < strlen(commandLine) && commandLine[i] != ' ' && 
-			 commandLine[i] != '\n'; i++); /* count through characters until we reach the end 
-											* of the string or a tokenising character */
+		       commandLine[i] != '\n'; i++); /* count through characters until we reach the end 
+						      * of the string or a tokenising character */
 		
-		
-		toRet->argv[0] = malloc(sizeof(char)*(i - startOfToken)+1);
+		toRet->argv[0] = malloc(sizeof(char)*(i+1));
 		toRet->argc++;
-		strncpy(toRet->argv[0], commandLine+startOfToken, (i-startOfToken));
-		toRet->argv[0][i] = '\0';
+		strncpy(toRet->argv[0], &commandLine[startOfToken], i-(startOfToken)); /* startOfToken is an index. add one for calculating length properly */
+		toRet->argv[0][i] = NULL;
 		toRet->argv[1] = NULL; /* make sure even for single commands, argv[] ends in a NULL pointer */
 		
 		i++;
@@ -221,6 +220,8 @@ int executeCommand(struct command_s *command) {
 		}
 		if (previousOutputPipe != inputFD)
 			close(previousOutputPipe);
+		dup2(inputFD, 1);
+		dup2(outputFD, 0);
 	}
 	return 0;
 }
