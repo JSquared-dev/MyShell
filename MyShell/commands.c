@@ -194,6 +194,9 @@ int executeCommand(struct command_s *command) {
 	else if (strcmp(command->argv[0], "cd") == 0) {
 		cd(command->argc, command->argv, inputFD, outputFD);
 	}
+	else if (strcmp(command->argv[0], "kill") == 0) {
+		kill(command->argc, command->argv, inputFD, outputFD);
+	}
 	else if ((strcmp(command->argv[0], "quit") == 0) || (strcmp(command->argv[0], "exit") == 0)) {
 		return -1;
 	}
