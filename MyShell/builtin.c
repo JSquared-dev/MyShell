@@ -87,7 +87,7 @@ void cd(int argc, char **argv, int inputFD, int outputFD) {
  *
  * NOTES          : 
  ********************************************************************************/
-void executeExternalCommand(int argc, char **argv, int inputFD, int outputFD) {
+void executeExternalCommand(int argc, char **argv, int inputFD, int outputFD, int backgroundTask) {
 	int pid = fork();
 	if (pid == 0) {
 		/* child. setup pipes for redirecting input/output */
@@ -100,7 +100,11 @@ void executeExternalCommand(int argc, char **argv, int inputFD, int outputFD) {
 	}
 	else if (pid > 0) {
 		/* wait for process to end */
-		waitpid(pid, NULL, 0);
+		if (backgroundTask == 0)
+			waitpid(pid, NULL, 0);
+		else {
+			/* store pid on job list */
+		}
 	}
 	else {
 		perror("MyShell");
