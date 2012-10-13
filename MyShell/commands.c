@@ -171,14 +171,15 @@ struct command_s *interpretCommand(char *commandLine) {
  *                  builtins before attempting to run an  external executable
  *                  via fork/exec call.
  *
- * NOTES          : TODO - implement external executable calls via fork/exec
- *                  TODO - free command automagically since we allocated it
+ * NOTES          : TODO - free command automagically since we allocated it
  *                         here in the first place. user may or may not
  *                         understand exactly what structure fields have been 
  *                         dynamically allocated.
  ********************************************************************************/
 int executeCommand(struct command_s *command) {
 	int inputFD, outputFD;
+	/* save stdin and stdout file descriptors for testing later on, 
+	 * and to save on some function calls */
 	inputFD = fileno(stdin);
 	outputFD = fileno(stdout);
 	if (strcmp(command->argv[0], "pwd") == 0) {
@@ -202,26 +203,33 @@ int executeCommand(struct command_s *command) {
 			
 			/* if end of command string, print final output. otherwise continue redirection */
 			if (command->next == NULL) {
-				/* close datapipe[0] and use stdout for process output */
-				close (datapipe[0]);
-				datapipe[0] = outputFD;
+				/* datapipe[1] is the input into the next command.
+				 * since next command is NULL, input into next command should go straight to stdout
+				 * so close datapipe[1] and replace it with stdout */
+				close (datapipe[1]);
+				datapipe[1] = outputFD;
 			}
 			
 			executeExternalCommand(command->argc, command->argv, previousOutputPipe, datapipe[1]);
 			
-			/* save read end of current pipe for use as an input in the next command. */
+			/* previousOutputPipe starts life as stdin. prevent us from closing stdin */
 			if (previousOutputPipe != inputFD) {
 				close(previousOutputPipe);
 			}
+			/* save read end of current pipe for use as an input in the next command. */
 			previousOutputPipe = datapipe[0];
 			/* write end of pipe is no longer required */
-			close(datapipe[1]);
+			/* write end of pipe can be outputFD when next command is NULL.
+			 * prevent ourselves from closing stdout. */
+			if (datapipe[1] != outputFD)
+				close(datapipe[1]);
+			
 			command = command->next;
 		}
+		/* previousOutputPipe is still a valid file descriptor.
+		 * save ourselves from closing stdin, and clean up after our fork/exec loop */
 		if (previousOutputPipe != inputFD)
 			close(previousOutputPipe);
-		dup2(inputFD, 1);
-		dup2(outputFD, 0);
 	}
 	return 0;
 }

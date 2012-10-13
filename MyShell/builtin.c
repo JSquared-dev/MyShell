@@ -91,8 +91,8 @@ void executeExternalCommand(int argc, char **argv, int inputFD, int outputFD) {
 	int pid = fork();
 	if (pid == 0) {
 		/* child. setup pipes for redirecting input/output */
-		inputFD = dup2(inputFD, 1);
-		outputFD = dup2(outputFD, 0);
+		inputFD = dup2(inputFD, 0);
+		outputFD = dup2(outputFD, 1);
 		/* execute command */
 		execvp(argv[0], argv);
 		perror("execvp");
