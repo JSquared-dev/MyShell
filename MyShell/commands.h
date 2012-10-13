@@ -22,6 +22,7 @@ struct command_s {
 	unsigned int argc; /* number of arguments in argv */
 	char **argv; /* array of string arguments to pass to utility */
 	struct command_s *next;
+	int backgroundTask; /* if 1, send this command to background and recover keyboard access */
 };
 
 int readCommandLine(char *command, FILE *source);

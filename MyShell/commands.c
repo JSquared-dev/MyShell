@@ -77,6 +77,7 @@ struct command_s *interpretCommand(char *commandLine) {
 	}
 	else {
 		toRet->next = NULL;
+		toRet->backgroundTask = 0;
 		toRet->argc = 0;
 		toRet->argv = malloc(sizeof(char *)*2);
 		if (toRet->argv == NULL) {
@@ -138,6 +139,11 @@ struct command_s *interpretCommand(char *commandLine) {
 				case '|':
 					toRet->next = interpretCommand(commandLine+i+1);
 					i = strlen(commandLine);
+					break;
+				case '&':
+					/* send child process to background */
+					toRet->backgroundTask = 1;
+					i++;
 					break;
 					
 				default:
