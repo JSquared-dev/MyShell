@@ -33,7 +33,7 @@
  * Description    : Copies the contents of source into buffer line by line
  *                  (on subsequent calls, each line is read in order).
  *
- * NOTES          : 
+ * NOTES          : BUG - Does not deal with arrow keys
  ********************************************************************************/
 int readCommandLine(char *buffer, FILE *source) {
 	printf("\n >");		/* command prompt character */
@@ -63,7 +63,8 @@ int readCommandLine(char *buffer, FILE *source) {
  *                  returns tokens in command_s structure which needs
  *                  deallocating when no longer needed.
  *
- * NOTES          : 
+ * NOTES          : BUG - arguments of created command may have artifacts at the 
+ *							end of their string
  ********************************************************************************/
 struct command_s *interpretCommand(char *commandLine) {
 	
