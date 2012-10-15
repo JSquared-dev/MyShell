@@ -33,7 +33,7 @@
  * Description    : Copies the contents of source into buffer line by line
  *                  (on subsequent calls, each line is read in order).
  *
- * NOTES          : 
+ * NOTES          : BUG - Does not deal with arrow keys
  ********************************************************************************/
 int readCommandLine(char *buffer, FILE *source) {
 	printf("\n >");		/* command prompt character */
@@ -63,7 +63,8 @@ int readCommandLine(char *buffer, FILE *source) {
  *                  returns tokens in command_s structure which needs
  *                  deallocating when no longer needed.
  *
- * NOTES          : 
+ * NOTES          : BUG - arguments of created command may have artifacts at the 
+ *							end of their string
  ********************************************************************************/
 struct command_s *interpretCommand(char *commandLine) {
 	
@@ -102,8 +103,8 @@ struct command_s *interpretCommand(char *commandLine) {
 		
 		/* could characters in command name, ready to allocate required space. */
 		for (; i < strlen(commandLine) && commandLine[i] != ' ' && 
-		       commandLine[i] != '\n'; i++); /* count through characters until we reach the end 
-						      * of the string or a tokenising character */
+			 commandLine[i] != '\n'; i++); /* count through characters until we reach the end 
+											* of the string or a tokenising character */
 		
 		toRet->argv[0] = malloc(sizeof(char)*(i+1));
 		toRet->argc++;
@@ -188,59 +189,45 @@ int executeCommand(struct command_s *command) {
 	 * and to save on some function calls */
 	inputFD = fileno(stdin);
 	outputFD = fileno(stdout);
-	if (strcmp(command->argv[0], "pwd") == 0) {
-		builtin_pwd(command->argc, command->argv, inputFD, outputFD);
-	}
-	else if (strcmp(command->argv[0], "cd") == 0) {
-		builtin_cd(command->argc, command->argv, inputFD, outputFD);
-	}
-	else if (strcmp(command->argv[0], "kill") == 0) {
-		builtin_kill(command->argc, command->argv, inputFD, outputFD);
-	}
-	else if ((strcmp(command->argv[0], "quit") == 0) || (strcmp(command->argv[0], "exit") == 0)) {
-		return -1;
-	}
-	else {
-		int previousOutputPipe = inputFD;
-		while (command != NULL) {
-			printf("Executing fork/exec for command: %s\n", command->argv[0]);
-			int datapipe[2];
-			if (pipe(datapipe) == -1) {
-				perror("pipe");
-				return 1;
-			}
-			
-			/* if end of command string, print final output. otherwise continue redirection */
-			if (command->next == NULL) {
-				/* datapipe[1] is the input into the next command.
-				 * since next command is NULL, input into next command should go straight to stdout
-				 * so close datapipe[1] and replace it with stdout */
-				close (datapipe[1]);
-				datapipe[1] = outputFD;
-			}
-			
-			executeExternalCommand(command->argc, command->argv, previousOutputPipe, datapipe[1]);
-			
-			/* previousOutputPipe starts life as stdin. prevent us from closing stdin */
-			if (previousOutputPipe != inputFD) {
-				close(previousOutputPipe);
-			}
-			/* save read end of current pipe for use as an input in the next command. */
-			previousOutputPipe = datapipe[0];
-			/* write end of pipe is no longer required */
-			/* write end of pipe can be outputFD when next command is NULL.
-			 * prevent ourselves from closing stdout. */
-			if (datapipe[1] != outputFD)
-				close(datapipe[1]);
-			
-			command = command->next;
+	int previousOutputPipe = inputFD;
+	int commandReturn = 0;
+	while (command != NULL && commandReturn >= 0) {
+		int datapipe[2];
+		if (pipe(datapipe) == -1) {
+			perror("pipe");
+			return 1;
 		}
-		/* previousOutputPipe is still a valid file descriptor.
-		 * save ourselves from closing stdin, and clean up after our fork/exec loop */
-		if (previousOutputPipe != inputFD)
+		
+		/* if end of command string, print final output. otherwise continue redirection */
+		if (command->next == NULL) {
+			/* datapipe[1] is the input into the next command.
+			 * since next command is NULL, input into next command should go straight to stdout
+			 * so close datapipe[1] and replace it with stdout */
+			close (datapipe[1]);
+			datapipe[1] = outputFD;
+		}
+		
+		commandReturn = forkAndExecute(command->argc, command->argv, previousOutputPipe, datapipe[1]);
+		
+		/* previousOutputPipe starts life as stdin. prevent us from closing stdin */
+		if (previousOutputPipe != inputFD) {
 			close(previousOutputPipe);
+		}
+		/* save read end of current pipe for use as an input in the next command. */
+		previousOutputPipe = datapipe[0];
+		/* write end of pipe is no longer required */
+		/* write end of pipe can be outputFD when next command is NULL.
+		 * prevent ourselves from closing stdout. */
+		if (datapipe[1] != outputFD)
+			close(datapipe[1]);
+		
+		command = command->next;
 	}
-	return 0;
+	/* previousOutputPipe is still a valid file descriptor.
+	 * save ourselves from closing stdin, and clean up after our fork/exec loop */
+	if (previousOutputPipe != inputFD)
+		close(previousOutputPipe);
+	return commandReturn;
 }
 
 
