@@ -18,6 +18,6 @@
 void pwd(int argc, char **argv, int inputFD, int outputFD);
 void cd(int argc, char **argv, int inputFD, int outputFD);
 
-void executeExternalCommand(int argc, char **argv, int inputFD, int outputFD);
+int forkAndExecute(int argc, char **argv, int inputFD, int outputFD);
 
 #endif
