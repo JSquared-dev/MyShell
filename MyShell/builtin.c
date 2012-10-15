@@ -108,7 +108,9 @@ void builtin_kill(int argc, char **argv, int inputFD, int outputFD) {
 		/* first argument is signal to send */
 		/* second argument is pid to signal */
 	}
-	kill(pid, signal);
+	if (kill(pid, signal) != 0) {
+		perror("kill");
+	}
 }
 
 /********************************************************************************
