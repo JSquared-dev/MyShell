@@ -189,13 +189,13 @@ int executeCommand(struct command_s *command) {
 	inputFD = fileno(stdin);
 	outputFD = fileno(stdout);
 	if (strcmp(command->argv[0], "pwd") == 0) {
-		pwd(command->argc, command->argv, inputFD, outputFD);
+		builtin_pwd(command->argc, command->argv, inputFD, outputFD);
 	}
 	else if (strcmp(command->argv[0], "cd") == 0) {
-		cd(command->argc, command->argv, inputFD, outputFD);
+		builtin_cd(command->argc, command->argv, inputFD, outputFD);
 	}
 	else if (strcmp(command->argv[0], "kill") == 0) {
-		kill(command->argc, command->argv, inputFD, outputFD);
+		builtin_kill(command->argc, command->argv, inputFD, outputFD);
 	}
 	else if ((strcmp(command->argv[0], "quit") == 0) || (strcmp(command->argv[0], "exit") == 0)) {
 		return -1;

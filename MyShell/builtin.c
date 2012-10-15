@@ -16,6 +16,8 @@
 #include <stdlib.h>
 #include <stdio.h>
 #include <unistd.h>
+#include <sys/types.h>
+#include <signal.h>
 #include <string.h>
 
 #ifdef __APPLE__
@@ -25,7 +27,7 @@
 #endif
 
 /********************************************************************************
- * Function name  : void pwd(int argc, char **argv)
+ * Function name  : void builtin_pwd(int argc, char **argv)
  *             argc  : Number of elements in argv.
  *             argv  : Array of NULL terminated strings.
  *
@@ -35,7 +37,7 @@
  *
  * NOTES          : 
  ********************************************************************************/
-void pwd(int argc, char **argv, int inputFD, int outputFD) {
+void builtin_pwd(int argc, char **argv, int inputFD, int outputFD) {
 	char *path = (char *)malloc(sizeof(char)*MAXPATHLENGTH);
 	if (getwd(path) == NULL) {
 	  perror("getwd");
@@ -47,7 +49,7 @@ void pwd(int argc, char **argv, int inputFD, int outputFD) {
 }
 
 /********************************************************************************
- * Function name  : void cd(int argc, char **argv)
+ * Function name  : void builtin_cd(int argc, char **argv)
  *             argc  : Number of elements in argv.
  *             argv  : Array of NULL terminated strings.
  *
@@ -59,7 +61,7 @@ void pwd(int argc, char **argv, int inputFD, int outputFD) {
  *                         navigation to true home directory instead of place
  *                         holder home directory
  ********************************************************************************/
-void cd(int argc, char **argv, int inputFD, int outputFD) {
+void builtin_cd(int argc, char **argv, int inputFD, int outputFD) {
 	/* if we are not given a directory, return to home directory */
 	char *directory;
 	if (argc > 1) {
@@ -74,7 +76,7 @@ void cd(int argc, char **argv, int inputFD, int outputFD) {
 }
 
 /********************************************************************************
- * Function name  : void kill(int argc, char **argv)
+ * Function name  : void builtin_kill(int argc, char **argv)
  *             argc  : Number of elements in argv.
  *             argv  : Array of NULL terminated strings.
  *
@@ -86,8 +88,27 @@ void cd(int argc, char **argv, int inputFD, int outputFD) {
  *                         navigation to true home directory instead of place
  *                         holder home directory
  ********************************************************************************/
-void kill(int argc, char **argv, int inputFD, int outputFD) {
-	
+void builtin_kill(int argc, char **argv, int inputFD, int outputFD) {
+	int pid; /* pid to signal */
+	int signal; /* signal to send to pid */
+	if (argc == 2) {
+		if (argv[1][0] != '-') { /* if first argument is not a flag, send SIGTERM to specified pid */
+			pid = atoi(argv[1]);
+			signal = SIGTERM;
+		}
+		else if (strcmp(argv[1], "-l") == 0) {
+			write(outputFD, "print list of signals\n", 22);
+			return;
+		}
+		else {
+			write(outputFD, "Invalid argument\n", 17);
+		}
+	}
+	else if (argc == 3) {
+		/* first argument is signal to send */
+		/* second argument is pid to signal */
+	}
+	kill(pid, signal);
 }
 
 /********************************************************************************
