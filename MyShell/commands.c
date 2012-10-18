@@ -191,10 +191,6 @@ int executeCommand(struct command_s *command) {
 	outputFD = fileno(stdout);
 	int previousOutputPipe = inputFD;
 	int commandReturn = 0;
-	int i;
-	for (i = 0; command->argv[i] != NULL; i++) {
-	  printf("%s ", command->argv[i]);
-	}
 	while (command != NULL && commandReturn >= 0) {
 		int datapipe[2];
 		if (pipe(datapipe) == -1) {
