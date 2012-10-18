@@ -142,6 +142,12 @@ int forkAndExecute(int argc, char **argv, int inputFD, int outputFD) {
 	else if ((strcmp(argv[0], "quit") == 0) || (strcmp(argv[0], "exit") == 0)) {
 		return -1;
 	}
+	else if (strcmp(argv[0], "pwd") == 0) {
+	        builtin_pwd(argc, argv, inputFD, outputFD);
+	}
+	else if (strcmp(argv[0], "kill") == 0) {
+	        builtin_kill(argc, argv, inputFD, outputFD);
+	}
 	else {
 		int pid = fork();
 		if (pid == 0) {
@@ -149,18 +155,9 @@ int forkAndExecute(int argc, char **argv, int inputFD, int outputFD) {
 			inputFD = dup2(inputFD, 0);
 			outputFD = dup2(outputFD, 1);
 			/* execute command */
-			if (strcmp(argv[0], "pwd") == 0) {
-				builtin_pwd(argc, argv, inputFD, outputFD);
-			}
-			else if (strcmp(argv[0], "kill") == 0) {
-				builtin_kill(argc, argv, inputFD, outputFD);
-			}
-			else {
-				execvp(argv[0], argv);
-				perror("execvp");
-				exit(1);
-			}
-			exit(0);
+			execvp(argv[0], argv);
+			perror("execvp");
+			exit(1);
 		}
 		else if (pid > 0) {
 			/* wait for process to end */

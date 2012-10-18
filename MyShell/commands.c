@@ -74,7 +74,7 @@ struct command_s *interpretCommand(char *commandLine) {
 	unsigned int startOfToken = 0;
 	
 	if (toRet == NULL) {
-		perror("interpretCommand: malloc");
+		perror("interpretCommand");
 	}
 	else {
 		toRet->next = NULL;
@@ -194,7 +194,7 @@ int executeCommand(struct command_s *command) {
 	while (command != NULL && commandReturn >= 0) {
 		int datapipe[2];
 		if (pipe(datapipe) == -1) {
-			perror("pipe");
+			perror("executeCommand: pipe");
 			return 1;
 		}
 		
