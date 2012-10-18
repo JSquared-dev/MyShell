@@ -132,7 +132,7 @@ struct command_s *interpretCommand(char *commandLine) {
 					/* create a token from string */
 					tempStore[toRet->argc] = malloc(sizeof(char)*(i-startOfToken)+1);
 					strncpy(tempStore[toRet->argc],commandLine+startOfToken,i-startOfToken);
-					tempStore[i-startOfToken] = '\0';
+					tempStore[toRet->argc][i-startOfToken] = '\0';
 					toRet->argc++;
 					/* set records to beginning of the next possible token */
 					startOfToken = i;
@@ -191,6 +191,10 @@ int executeCommand(struct command_s *command) {
 	outputFD = fileno(stdout);
 	int previousOutputPipe = inputFD;
 	int commandReturn = 0;
+	int i;
+	for (i = 0; command->argv[i] != NULL; i++) {
+	  printf("%s ", command->argv[i]);
+	}
 	while (command != NULL && commandReturn >= 0) {
 		int datapipe[2];
 		if (pipe(datapipe) == -1) {
