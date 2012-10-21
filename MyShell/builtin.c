@@ -213,9 +213,13 @@ int forkAndExecute(int argc, char **argv, int inputFD, int outputFD) {
 		else if (pid > 0) {
 			/* wait for process to end */
 			waitpid(pid, NULL, 0);
+			if (inputFD != fileno(stdin))
+				close(inputFD);
+			if (outputFD != fileno(stdout))
+				close(outputFD);
 		}
 		else {
-			perror("MyShell");
+			perror("forkAndExecute");
 		}
 	}
 	return 0;
