@@ -13,6 +13,8 @@
  ****************************************************************************************/
 
 #include "builtin.h"
+#include <ctype.h>
+#include <limits.h>
 #include <stdlib.h>
 #include <stdio.h>
 #include <unistd.h>
@@ -93,11 +95,19 @@ void builtin_cd(int argc, char **argv, int inputFD, int outputFD) {
  *                         holder home directory
  ********************************************************************************/
 void builtin_kill(int argc, char **argv, int inputFD, int outputFD) {
-	int pid; /* pid to signal */
-	int signal; /* signal to send to pid */
+	int pid = 0; /* pid to signal */
+	int signal = 0; /* signal to send to pid */
 	if (argc == 2) {
 		if (argv[1][0] != '-') { /* if first argument is not a flag, send SIGTERM to specified pid */
-			pid = atoi(argv[1]);
+			long inputPID = strtol(argv[1], NULL, 10);
+			if (inputPID > INT_MAX || inputPID == 0) {
+				const char *errormsg = "Invalid PID";
+				write(outputFD, errormsg, strlen(errormsg));
+				return;
+			}
+			else {
+				pid = (int)inputPID;
+			}
 			signal = SIGTERM;
 		}
 		else if (strcmp(argv[1], "-l") == 0) {
@@ -108,14 +118,53 @@ void builtin_kill(int argc, char **argv, int inputFD, int outputFD) {
 		}
 		else {
 			write(outputFD, "Invalid argument\n", 17);
+			return;
 		}
 	}
 	else if (argc == 3) {
 		/* first argument is signal to send */
+		/* if the first character is a number, read the whole argument as a number */
+		if (isdigit(argv[1][0])) {
+			long inputSignal = strtol(argv[1], NULL, 10);
+			/* ensure value is legal and will not discard overflowing bits unnecessarily */
+			if (inputSignal > INT_MAX || inputSignal == 0) {
+				const char *errormsg = "Invalid Signal";
+				write(outputFD, errormsg, strlen(errormsg));
+				return;
+			}
+			else {
+				signal = (int)inputSignal;
+			}
+		}
+		else if (strcmp(argv[1], "SIGKILL") == 0) {
+			signal = SIGKILL;
+		}
+		else if (strcmp(argv[1], "SIGHUP") == 0) {
+			signal = SIGHUP;
+		}
+		else if (strcmp(argv[1], "SIGTERM") == 0) {
+			signal = SIGTERM;
+		}
 		/* second argument is pid to signal */
+		long inputPID = strtol(argv[2], NULL, 10);
+		/* ensure value is legal and will not discard overflowing bits unnecessarily */
+		if (inputPID > INT_MAX || inputPID == 0) {
+			const char *errormsg = "Invalid PID";
+			write(outputFD, errormsg, strlen(errormsg));
+			return;
+		}
+		else {
+			pid = (int)inputPID;
+		}
 	}
-	if (kill(pid, signal) != 0) {
-		perror("kill");
+	if (pid != 0 && signal != 0) {
+		if (kill(pid, signal) != 0) {
+			perror("kill");
+		}
+	}
+	else {
+		const char *errormsg = "Error parsing arguments.\n";
+		write(outputFD, errormsg, strlen(errormsg));
 	}
 }
 
