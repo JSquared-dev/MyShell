@@ -102,6 +102,8 @@ void builtin_kill(int argc, char **argv, int inputFD, int outputFD) {
 		}
 		else if (strcmp(argv[1], "-l") == 0) {
 			write(outputFD, "print list of signals\n", 22);
+			const char *signalsList = "1) SIGHUP\t\t9) SIGKILL\t\t15) SIGTERM\n";
+			write(outputFD, signalsList, strlen(signalsList));
 			return;
 		}
 		else {
