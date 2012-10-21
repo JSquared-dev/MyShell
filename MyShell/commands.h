@@ -21,7 +21,8 @@
 struct command_s {
 	unsigned int argc; /* number of arguments in argv */
 	char **argv; /* array of string arguments to pass to utility */
-	struct command_s *next;
+	struct command_s *next; /* next command in command list */
+	int inputFD, outputFD; /* input and output file descriptors for stdio */
 	int backgroundTask; /* if 1, send this command to background and recover keyboard access */
 };
 

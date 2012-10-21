@@ -146,6 +146,9 @@ struct command_s *interpretCommand(char *commandLine) {
 					toRet->backgroundTask = 1;
 					i++;
 					break;
+				case '>':
+					/* next argument denotes file name to print output to */
+					break;
 					
 				default:
 					i++;
