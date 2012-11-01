@@ -146,6 +146,28 @@ struct command_s *interpretCommand(char *commandLine) {
 					toRet->backgroundTask = 1;
 					i++;
 					break;
+  			        case '>':
+				        /* next argument is the file to redirect into. */ 
+				        char filename[MAXPATHLEN];
+				        i++;
+				        while (commandLine[i] == ' ' || commandLine[i] == '\t')
+				              i++;
+					startOfToken = i;
+					for (; i < strlen(commandLine) && commandLine != '\0' && commandLine[i] != '\n' && commandLine[i] != ' '; i++);
+				        if (i != startOfToken) {
+					      int filenameLength = (i-startOfToken);
+					      strncpy(filename, commandLine, filenameLength);
+					      filename[filenameLength] = '\0';
+					      File *outputFile = fopen(filename, "w");
+					      if (outputFile == NULL) {
+						    perror("fopen");
+					      }
+					      else 
+					      {
+						    toRet->outputFD = fileno(outputFile);
+					      }
+					}
+			                break;
 					
 				default:
 					i++;
