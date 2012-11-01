@@ -95,10 +95,11 @@ void builtin_cd(int argc, char **argv, int inputFD, int outputFD) {
  *                         holder home directory
  ********************************************************************************/
 void builtin_kill(int argc, char **argv, int inputFD, int outputFD) {
-	int pid = 0; /* pid to signal */
+	int *pidlist = NULL; /* pid to signal */
 	int signal = 0; /* signal to send to pid */
 	if (argc == 2) {
 		if (argv[1][0] != '-') { /* if first argument is not a flag, send SIGTERM to specified pid */
+		  pidlist = malloc(sizeof(int)*1);
 			long inputPID = strtol(argv[1], NULL, 10);
 			if (inputPID > INT_MAX || inputPID == 0) {
 				const char *errormsg = "Invalid PID";
@@ -106,7 +107,7 @@ void builtin_kill(int argc, char **argv, int inputFD, int outputFD) {
 				return;
 			}
 			else {
-				pid = (int)inputPID;
+				pidlist[0] = (int)inputPID;
 			}
 			signal = SIGTERM;
 		}
@@ -121,7 +122,7 @@ void builtin_kill(int argc, char **argv, int inputFD, int outputFD) {
 			return;
 		}
 	}
-	else if (argc == 3) {
+	else if (argc >= 3) {
 		/* first argument is signal to send */
 		/* if the first character is a number, read the whole argument as a number */
 		if (isdigit(argv[1][0])) {
@@ -145,7 +146,9 @@ void builtin_kill(int argc, char **argv, int inputFD, int outputFD) {
 		else if (strcmp(argv[1], "SIGTERM") == 0) {
 			signal = SIGTERM;
 		}
-		/* second argument is pid to signal */
+		pidlist = malloc(sizeof(int)*(argc-2));
+		/* second argument onwards are pids to signal */
+		for (int i = 2; i < argc; i++) {
 		long inputPID = strtol(argv[2], NULL, 10);
 		/* ensure value is legal and will not discard overflowing bits unnecessarily */
 		if (inputPID > INT_MAX || inputPID == 0) {
@@ -154,13 +157,17 @@ void builtin_kill(int argc, char **argv, int inputFD, int outputFD) {
 			return;
 		}
 		else {
-			pid = (int)inputPID;
+			pidlist[i-2] = (int)inputPID;
+		}
 		}
 	}
-	if (pid != 0 && signal != 0) {
-		if (kill(pid, signal) != 0) {
+	if (pidlist != NULL && signal != 0) {
+	  for (int i = 0; i < argc-2; i++) {
+		if (kill(pidlist[i], signal) != 0) {
 			perror("kill");
 		}
+	  }
+		free(pidlist);
 	}
 	else {
 		const char *errormsg = "Error parsing arguments.\n";
