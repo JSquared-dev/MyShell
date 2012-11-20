@@ -72,6 +72,7 @@ struct command_s *interpretCommand(char *commandLine) {
 	/* temporary argument storage. ready to copy into a perfect sized array later on */
 	char *tempStore[MAXARGUMENTCOUNT];
 	unsigned int startOfToken = 0;
+	char *redirectedFileName;
 	
 	if (toRet == NULL) {
 		perror("interpretCommand");
@@ -148,8 +149,7 @@ struct command_s *interpretCommand(char *commandLine) {
 					i++;
 					break;
   			        case '>':
-				        /* next argument is the file to redirect into. */ 
-				        char filename[MAXPATHLEN];
+				        /* next argument is the file to redirect into. */;
 				        i++;
 				        while (commandLine[i] == ' ' || commandLine[i] == '\t')
 				              i++;
@@ -157,9 +157,10 @@ struct command_s *interpretCommand(char *commandLine) {
 					for (; i < strlen(commandLine) && commandLine != '\0' && commandLine[i] != '\n' && commandLine[i] != ' '; i++);
 				        if (i != startOfToken) {
 					      int filenameLength = (i-startOfToken);
-					      strncpy(filename, commandLine, filenameLength);
-					      filename[filenameLength] = '\0';
-					      File *outputFile = fopen(filename, "w");
+					      redirectedFileName = malloc(sizeof(char)*filenameLength);
+					      strncpy(redirectedFileName, commandLine, filenameLength);
+					      redirectedFileName[filenameLength] = '\0';
+					      FILE *outputFile = fopen(redirectedFileName, "w");
 					      if (outputFile == NULL) {
 						    perror("fopen");
 					      }
