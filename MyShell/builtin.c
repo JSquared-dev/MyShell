@@ -192,7 +192,6 @@ void builtin_kill(int argc, char **argv, int inputFD, int outputFD) {
  *
  * NOTES          : 
  ********************************************************************************/
-<<<<<<< HEAD
 int forkAndExecute(int argc, char **argv, int inputFD, int outputFD) {
 	/* cd and exit/quit are not supported by multi-processing. deal with them without fork()ing */
 	if (strcmp(argv[0], "cd") == 0) {
