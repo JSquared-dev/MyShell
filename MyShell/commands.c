@@ -107,10 +107,10 @@ struct command_s *interpretCommand(char *commandLine) {
 			 commandLine[i] != '\n'; i++); /* count through characters until we reach the end 
 											* of the string or a tokenising character */
 		
-		toRet->argv[0] = malloc(sizeof(char)*(i+1));
+		toRet->argv[0] = malloc(sizeof(char)*((i-startOfToken)+1));
 		toRet->argc++;
 		strncpy(toRet->argv[0], &commandLine[startOfToken], i-(startOfToken)); /* startOfToken is an index. add one for calculating length properly */
-		toRet->argv[0][i] = NULL;
+		toRet->argv[0][i-startOfToken] = NULL;
 		toRet->argv[1] = NULL; /* make sure even for single commands, argv[] ends in a NULL pointer */
 		
 		i++;
