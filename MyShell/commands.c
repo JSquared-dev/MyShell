@@ -79,6 +79,7 @@ struct command_s *interpretCommand(char *commandLine) {
 	else {
 		toRet->next = NULL;
 		toRet->backgroundTask = 0;
+		toRet->inputFD = toRet->outputFD = -1;
 		toRet->argc = 0;
 		toRet->argv = malloc(sizeof(char *)*2);
 		if (toRet->argv == NULL) {
@@ -146,7 +147,28 @@ struct command_s *interpretCommand(char *commandLine) {
 					toRet->backgroundTask = 1;
 					i++;
 					break;
-					
+  			        case '>':
+				        /* next argument is the file to redirect into. */ 
+				        char filename[MAXPATHLEN];
+				        i++;
+				        while (commandLine[i] == ' ' || commandLine[i] == '\t')
+				              i++;
+					startOfToken = i;
+					for (; i < strlen(commandLine) && commandLine != '\0' && commandLine[i] != '\n' && commandLine[i] != ' '; i++);
+				        if (i != startOfToken) {
+					      int filenameLength = (i-startOfToken);
+					      strncpy(filename, commandLine, filenameLength);
+					      filename[filenameLength] = '\0';
+					      File *outputFile = fopen(filename, "w");
+					      if (outputFile == NULL) {
+						    perror("fopen");
+					      }
+					      else 
+					      {
+						    toRet->outputFD = fileno(outputFile);
+					      }
+					}
+			                break;
 				default:
 					i++;
 					break;
@@ -161,6 +183,27 @@ struct command_s *interpretCommand(char *commandLine) {
 				toRet->argv[j] = tempStore[j];
 			}
 			toRet->argv[toRet->argc] = NULL;
+		}
+		
+		/* check I/O file descriptors and assign pipes as necessary */
+		if (toRet->outputFD == -1 && toRet->next != NULL) {
+			/* create a pipe, assign to outputFD and next->outputFD */
+			int newpipe[2];
+			if (pipe(newpipe) == -1) {
+				perror("interpretCommand: pipe");
+				destroyCommand(toRet);
+				return NULL;
+			}
+			toRet->outputFD = newpipe[1];
+			toRet->next->inputFD = newpipe[0];
+		}
+		else if (toRet->outputFD == -1 && toRet->next == NULL) {
+			/* end of command list, output must be to stdout unless being rediected already. */
+			toRet->outputFD = fileno(stdout);
+		}
+		if (toRet->inputFD == -1) {
+			/* if input has not been assigned yet, assign standard input to inputFD */
+			toRet->inputFD = fileno(stdin);
 		}
 	}
 	return toRet;
@@ -184,49 +227,13 @@ struct command_s *interpretCommand(char *commandLine) {
  *                         dynamically allocated.
  ********************************************************************************/
 int executeCommand(struct command_s *command) {
-	int inputFD, outputFD;
 	/* save stdin and stdout file descriptors for testing later on, 
 	 * and to save on some function calls */
-	inputFD = fileno(stdin);
-	outputFD = fileno(stdout);
-	int previousOutputPipe = inputFD;
 	int commandReturn = 0;
 	while (command != NULL && commandReturn >= 0) {
-		int datapipe[2];
-		if (pipe(datapipe) == -1) {
-			perror("executeCommand: pipe");
-			return 1;
-		}
-		
-		/* if end of command string, print final output. otherwise continue redirection */
-		if (command->next == NULL) {
-			/* datapipe[1] is the input into the next command.
-			 * since next command is NULL, input into next command should go straight to stdout
-			 * so close datapipe[1] and replace it with stdout */
-			close (datapipe[1]);
-			datapipe[1] = outputFD;
-		}
-		
-		commandReturn = forkAndExecute(command->argc, command->argv, previousOutputPipe, datapipe[1]);
-		
-		/* previousOutputPipe starts life as stdin. prevent us from closing stdin */
-		if (previousOutputPipe != inputFD) {
-			close(previousOutputPipe);
-		}
-		/* save read end of current pipe for use as an input in the next command. */
-		previousOutputPipe = datapipe[0];
-		/* write end of pipe is no longer required */
-		/* write end of pipe can be outputFD when next command is NULL.
-		 * prevent ourselves from closing stdout. */
-		if (datapipe[1] != outputFD)
-			close(datapipe[1]);
-		
+		commandReturn = forkAndExecute(command->argc, command->argv, command->inputFD, command->outputFD);
 		command = command->next;
 	}
-	/* previousOutputPipe is still a valid file descriptor.
-	 * save ourselves from closing stdin, and clean up after our fork/exec loop */
-	if (previousOutputPipe != inputFD)
-		close(previousOutputPipe);
 	return commandReturn;
 }
 
@@ -244,11 +251,19 @@ int executeCommand(struct command_s *command) {
  * NOTES          : 
  ********************************************************************************/
 void destroyCommand(struct command_s *command) {
-	
-	for (int i = 0; i < command->argc; i++){
-		free(command->argv[i]);
+	struct command_s *curCommand = command;
+	while (curCommand != NULL) {
+		for (int i = 0; i < curCommand->argc; i++){
+			free(curCommand->argv[i]);
+		}
+		free(curCommand->argv);
+		if (curCommand->inputFD != fileno(stdin))
+			close(curCommand->inputFD);
+		if (curCommand->outputFD != fileno(stdout))
+			close(curCommand->outputFD);
+		curCommand = command->next;
+		free(command);
+		command = curCommand;
 	}
-	free(command->argv);
-	free(command);
 }
 

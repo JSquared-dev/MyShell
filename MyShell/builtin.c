@@ -192,6 +192,7 @@ void builtin_kill(int argc, char **argv, int inputFD, int outputFD) {
  *
  * NOTES          : 
  ********************************************************************************/
+<<<<<<< HEAD
 int forkAndExecute(int argc, char **argv, int inputFD, int outputFD) {
 	/* cd and exit/quit are not supported by multi-processing. deal with them without fork()ing */
 	if (strcmp(argv[0], "cd") == 0) {
@@ -220,9 +221,13 @@ int forkAndExecute(int argc, char **argv, int inputFD, int outputFD) {
 		else if (pid > 0) {
 			/* wait for process to end */
 			waitpid(pid, NULL, 0);
+			if (inputFD != fileno(stdin))
+				close(inputFD);
+			if (outputFD != fileno(stdout))
+				close(outputFD);
 		}
 		else {
-			perror("MyShell");
+			perror("forkAndExecute");
 		}
 	}
 	return 0;
