@@ -36,7 +36,7 @@
  * NOTES          : 
  ********************************************************************************/
 void builtin_pwd(int argc, char **argv, int inputFD, int outputFD) {
-	char *path = (char *)malloc(sizeof(char)*MAXPATHLENGTH);
+	char *path = (char *)malloc(sizeof(char)*MAX_PATH);
 	if (path == NULL) {
 		perror("pwd");
 		return;
