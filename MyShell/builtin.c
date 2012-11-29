@@ -22,6 +22,10 @@
 #include <signal.h>
 #include <string.h>
 
+#ifndef PATH_MAX
+#define PATH_MAX 4096
+#endif
+
 /********************************************************************************
  * Function name  : void builtin_pwd(int argc, char **argv)
  *             argc  : Number of elements in argv.
@@ -36,14 +40,14 @@
  * NOTES          : 
  ********************************************************************************/
 void builtin_pwd(int argc, char **argv, int inputFD, int outputFD) {
-	char *path = (char *)malloc(sizeof(char)*MAX_PATH);
+  char *path = (char *)malloc(sizeof(char)*PATH_MAX);
 	if (path == NULL) {
 		perror("pwd");
 		return;
 	}
 	write(outputFD, "BUILTIN\n", 8);
-	if (getwd(path) == NULL) {
-		perror("getwd");
+	if (getcwd(path, PATH_MAX) == NULL) {
+		perror("getcwd");
 	}
 	else {
 		write(outputFD, path, strlen(path));
@@ -79,6 +83,43 @@ void builtin_cd(int argc, char **argv, int inputFD, int outputFD) {
 	
 	if (chdir(directory) != 0) 
 		perror("cd");
+}
+
+/********************************************************************************
+ * Function name  : void builtin_ps(int argc, char **argv)
+ *
+ */
+void builtin_ps(int argc, char **argv, int inputFD, int outputFD) {
+  FILE *output = fdopen(dup(outputFD), "w");
+  FILE *input = fdopen(dup(inputFD), "r");
+  fprintf(output, "BUILTIN\n");
+  char *procFileName = malloc(sizeof(char)*PATH_MAX); /* allocate excess in case of long file structures */
+  for (int i = 0; i < PATH_MAX;i++, procFileName[i] = '\0');
+
+  if (argc == 1) {
+    int cpid = getpid(); /* current PID */
+    sprintf(procFileName, "/proc/%d/stat", cpid);
+    FILE *statFile = fopen(procFileName, "r");
+    /* parse /proc/pid */
+    int pid;
+    char commandName[PATH_MAX];
+    char state;
+    int ppid, pgrp, session, tty_nr, tpgid;
+    unsigned int flags;
+    unsigned long minflt, cminflt, majflt, cmajflt, utime, stime;
+    long cutime, cstime, priority, nice, num_threads, itrealvalue;
+    
+    fprintf(output, "  PID\t TTY\t TIME\t COMMAND\n");
+
+    fscanf(statFile, "%d %s %c %d %d %d %d %d %u %lu %lu %lu %lu %lu %lu %l %l %l %l %l %l",
+	   &pid, &commandName, &state, &ppid, &pgrp, &session, &tty_nr, &tpgid, &flags, &minflt, &cminflt,
+	   &majflt, &cmajflt, &utime, &stime, &cutime, &cstime, &priority, &nice, &num_threads, &itrealvalue);
+    /* print line by line to output file stream */
+    fprintf(output, "%d %s %lu %s\n", pid, ttyname(tty_nr), utime, commandName);
+  }
+  fflush(output);
+  fclose(input);
+  fclose(output);
 }
 
 /********************************************************************************
@@ -205,6 +246,9 @@ int forkAndExecute(int argc, char **argv, int inputFD, int outputFD) {
 	}
 	else if (strcmp(argv[0], "kill") == 0) {
 	        builtin_kill(argc, argv, inputFD, outputFD);
+	}
+	else if (strcmp(argv[0], "ps") == 0) {
+	  builtin_ps(argc, argv, inputFD, outputFD);
 	}
 	else {
 		int pid = fork();
