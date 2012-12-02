@@ -86,6 +86,23 @@ void builtin_cd(int argc, char **argv, int inputFD, int outputFD) {
 		perror("cd");
 }
 
+void printStatsForProcess(FILE *statFile, FILE *output) {
+  int pid;
+  char commandName[PATH_MAX];
+  char state;
+  int ppid, pgrp, session, tty_nr, tpgid;
+  unsigned int flags;
+  unsigned long minflt, cminflt, majflt, cmajflt, utime, stime;
+  long cutime, cstime, priority, nice, num_threads, itrealvalue;
+
+  fscanf(statFile, "%d %s %c %d %d %d %d %d %u %lu %lu %lu %lu %lu %lu %l %l %l %l %l %l",
+	 &pid, &commandName, &state, &ppid, &pgrp, &session, &tty_nr, &tpgid, &flags, &minflt, &cminflt,
+	 &majflt, &cmajflt, &utime, &stime, &cutime, &cstime, &priority, &nice, &num_threads, &itrealvalue);
+  /* print line by line to output file stream */
+  fprintf(output, "%d %d %lu %s\n", pid, tty_nr, utime+stime, commandName);
+
+}
+
 /********************************************************************************
  * Function name  : void builtin_ps(int argc, char **argv)
  *
@@ -104,29 +121,32 @@ void builtin_ps(int argc, char **argv, int inputFD, int outputFD) {
 		sprintf(procFileName, "/proc/%d/task", cpid);
 		DIR *taskDir = opendir(procFileName);
 		/* parse /proc/pid */
-		int pid;
-		char commandName[PATH_MAX];
-		char state;
-		int ppid, pgrp, session, tty_nr, tpgid;
-		unsigned int flags;
-		unsigned long minflt, cminflt, majflt, cmajflt, utime, stime;
-		long cutime, cstime, priority, nice, num_threads, itrealvalue;
+		//		int pid;
+		//char commandName[PATH_MAX];
+		//char state;
+		//int ppid, pgrp, session, tty_nr, tpgid;
+		//unsigned int flags;
+		//unsigned long minflt, cminflt, majflt, cmajflt, utime, stime;
+		//long cutime, cstime, priority, nice, num_threads, itrealvalue;
 		
 		fprintf(output, "  PID\t TTY\t TIME\t COMMAND\n");
-		fscanf(statFile, "%d %s %c %d %d %d %d %d %u %lu %lu %lu %lu %lu %lu %l %l %l %l %l %l",
-			   &pid, &commandName, &state, &ppid, &pgrp, &session, &tty_nr, &tpgid, &flags, &minflt, &cminflt,
-			   &majflt, &cmajflt, &utime, &stime, &cutime, &cstime, &priority, &nice, &num_threads, &itrealvalue);
+		//fscanf(statFile, "%d %s %c %d %d %d %d %d %u %lu %lu %lu %lu %lu %lu %l %l %l %l %l %l",
+		// &pid, &commandName, &state, &ppid, &pgrp, &session, &tty_nr, &tpgid, &flags, &minflt, &cminflt,
+		// &majflt, &cmajflt, &utime, &stime, &cutime, &cstime, &priority, &nice, &num_threads, &itrealvalue);
 		/* print line by line to output file stream */
-		fprintf(output, "%d %d %lu %s\n", pid, tty_nr, utime+stime, commandName);
+		//fprintf(output, "%d %d %lu %s\n", pid, tty_nr, utime+stime, commandName);
+		printStatsForProcess(statFile, output);
 		fclose(statFile);
 		
 		struct dirent *curDirent;
 		while ((curDirent = readdir(taskDir)) != NULL) {
-			fprintf(output, "%s", curDirent->d_name);
-				//sprintf(procFileName, "/proc/%d/stat", NULL);
-			statFile = fopen(procFileName, "r");
-			fscanf(statFile, "%256s", &commandName);
-			fprintf(output, "%s", commandName);
+		  int childPID;
+		  //fprintf(output, "%s\n", curDirent->d_name);
+			if (sscanf(curDirent->d_name, "%d", &childPID) == 1) {
+			  sprintf(procFileName, "/proc/%d/stat", childPID);
+			  statFile = fopen(procFileName, "r");
+			  printStatsForProcess(statFile, output);
+			}
 		}
 		closedir(taskDir);
 	}
