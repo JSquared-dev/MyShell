@@ -15,6 +15,11 @@
 
 #define MAXPATHLENGTH 1024
 
+#include <unistd.h>
+#ifndef PATH_MAX
+#define PATH_MAX 4096
+#endif
+
 void builtin_pwd(int argc, char **argv, int inputFD, int outputFD);
 void builtin_cd(int argc, char **argv, int inputFD, int outputFD);
 void builtin_kill(int argc, char **argv, int inputFD, int outputFD);
