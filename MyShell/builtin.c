@@ -110,12 +110,18 @@ void builtin_ps(int argc, char **argv, int inputFD, int outputFD) {
     long cutime, cstime, priority, nice, num_threads, itrealvalue;
     
     fprintf(output, "  PID\t TTY\t TIME\t COMMAND\n");
-
-    fscanf(statFile, "%d %s %c %d %d %d %d %d %u %lu %lu %lu %lu %lu %lu %l %l %l %l %l %l",
-	   &pid, &commandName, &state, &ppid, &pgrp, &session, &tty_nr, &tpgid, &flags, &minflt, &cminflt,
-	   &majflt, &cmajflt, &utime, &stime, &cutime, &cstime, &priority, &nice, &num_threads, &itrealvalue);
-    /* print line by line to output file stream */
-    fprintf(output, "%d %s %lu %s\n", pid, ttyname(tty_nr), utime, commandName);
+    while (statFile != NULL) {
+      fscanf(statFile, "%d %s %c %d %d %d %d %d %u %lu %lu %lu %lu %lu %lu %l %l %l %l %l %l",
+             &pid, &commandName, &state, &ppid, &pgrp, &session, &tty_nr, &tpgid, &flags, &minflt, &cminflt,
+             &majflt, &cmajflt, &utime, &stime, &cutime, &cstime, &priority, &nice, &num_threads, &itrealvalue);
+        /* print line by line to output file stream */
+      fprintf(output, "%d %s %lu %s\n", pid, ttyname(tty_nr), utime+stime, commandName);
+	fclose(statFile);
+	sprintf(procFileName, "/proc/%d/task/", cpid);
+	statFile = fopen(procFileName, "r");
+	fscanf(statFile, "%256s", &commandName);
+	fprintf("%s",commandName);
+      }
   }
   fflush(output);
   fclose(input);
