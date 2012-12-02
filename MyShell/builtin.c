@@ -111,7 +111,11 @@ void printStatsFromFile(FILE *statFile, FILE *output) {
 		   &pid, &commandName, &state, &ppid, &pgrp, &session, &tty_nr, &tpgid, &flags, &minflt, &cminflt,
 		   &majflt, &cmajflt, &utime, &stime, &cutime, &cstime, &priority, &nice, &num_threads, &itrealvalue);
 	/* print line by line to output file stream */
-	fprintf(output, "%d %d %lu %s\n", pid, tty_nr, utime+stime, commandName);
+	int hours, mins, secs;
+	hours = (utime+stime)/360000;
+	mins = (utime+stime)/6000;
+	secs = (utime+stime)/100;
+	fprintf(output, " %d\t %d\t %02d:%02d:%02d  %s\n", pid, tty_nr, hours, mins, secs, commandName);
 	
 }
 
@@ -167,11 +171,12 @@ void builtin_ps(int argc, char **argv, int inputFD, int outputFD) {
 	else if (argc == 2) {
 		if (strcmp(argv[1], "-A") == 0) {
 			/* list every running process */
-			fprintf(output, "  PID\t TTY\t TIME\t COMMAND\n");
+			fprintf(output, "  PID TTY\t TIME\t  COMMAND\n");
 			
 			/* loop through every directory entry and get child pids from them
 			 * then print their stat files */
 			DIR *taskDir = opendir("/proc");
+			FILE *statFile = NULL;
 			struct dirent *curDirent;
 			while ((curDirent = readdir(taskDir)) != NULL) {
 				int childPID;
@@ -183,6 +188,9 @@ void builtin_ps(int argc, char **argv, int inputFD, int outputFD) {
 				}
 			}
 			closedir(taskDir);
+		}
+		else {
+		  fprintf(output, "Did not understand flag: %s", argv[1]);
 		}
 	}
 	else {
@@ -335,14 +343,15 @@ int forkAndExecute(int argc, char **argv, int inputFD, int outputFD) {
 		else if (pid > 0) {
 			/* wait for process to end */
 			waitpid(pid, NULL, 0);
-			if (inputFD != fileno(stdin))
-				close(inputFD);
-			if (outputFD != fileno(stdout))
-				close(outputFD);
 		}
 		else {
 			perror("forkAndExecute");
 		}
 	}
+	if (inputFD != fileno(stdin))
+	  close(inputFD);
+	if (outputFD != fileno(stdout))
+	  close(outputFD);
+
 	return 0;
 }
