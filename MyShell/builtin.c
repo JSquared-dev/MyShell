@@ -21,6 +21,7 @@
 #include <sys/types.h>
 #include <signal.h>
 #include <string.h>
+#include <dirent.h>
 
 #ifndef PATH_MAX
 #define PATH_MAX 4096
@@ -40,7 +41,7 @@
  * NOTES          : 
  ********************************************************************************/
 void builtin_pwd(int argc, char **argv, int inputFD, int outputFD) {
-  char *path = (char *)malloc(sizeof(char)*PATH_MAX);
+	char *path = (char *)malloc(sizeof(char)*PATH_MAX);
 	if (path == NULL) {
 		perror("pwd");
 		return;
@@ -90,42 +91,48 @@ void builtin_cd(int argc, char **argv, int inputFD, int outputFD) {
  *
  */
 void builtin_ps(int argc, char **argv, int inputFD, int outputFD) {
-  FILE *output = fdopen(dup(outputFD), "w");
-  FILE *input = fdopen(dup(inputFD), "r");
-  fprintf(output, "BUILTIN\n");
-  char *procFileName = malloc(sizeof(char)*PATH_MAX); /* allocate excess in case of long file structures */
-  for (int i = 0; i < PATH_MAX;i++, procFileName[i] = '\0');
-
-  if (argc == 1) {
-    int cpid = getpid(); /* current PID */
-    sprintf(procFileName, "/proc/%d/stat", cpid);
-    FILE *statFile = fopen(procFileName, "r");
-    /* parse /proc/pid */
-    int pid;
-    char commandName[PATH_MAX];
-    char state;
-    int ppid, pgrp, session, tty_nr, tpgid;
-    unsigned int flags;
-    unsigned long minflt, cminflt, majflt, cmajflt, utime, stime;
-    long cutime, cstime, priority, nice, num_threads, itrealvalue;
-    
-    fprintf(output, "  PID\t TTY\t TIME\t COMMAND\n");
-    while (statFile != NULL) {
-      fscanf(statFile, "%d %s %c %d %d %d %d %d %u %lu %lu %lu %lu %lu %lu %l %l %l %l %l %l",
-             &pid, &commandName, &state, &ppid, &pgrp, &session, &tty_nr, &tpgid, &flags, &minflt, &cminflt,
-             &majflt, &cmajflt, &utime, &stime, &cutime, &cstime, &priority, &nice, &num_threads, &itrealvalue);
-        /* print line by line to output file stream */
-      fprintf(output, "%d %s %lu %s\n", pid, ttyname(tty_nr), utime+stime, commandName);
-	fclose(statFile);
-	sprintf(procFileName, "/proc/%d/task/", cpid);
-	statFile = fopen(procFileName, "r");
-	fscanf(statFile, "%256s", &commandName);
-	fprintf("%s",commandName);
-      }
-  }
-  fflush(output);
-  fclose(input);
-  fclose(output);
+	FILE *output = fdopen(dup(outputFD), "w");
+	FILE *input = fdopen(dup(inputFD), "r");
+	fprintf(output, "BUILTIN\n");
+	char *procFileName = malloc(sizeof(char)*PATH_MAX); /* allocate excess in case of long file structures */
+	for (int i = 0; i < PATH_MAX;i++, procFileName[i] = '\0');
+	
+	if (argc == 1) {
+		int cpid = getpid(); /* current PID */
+		sprintf(procFileName, "/proc/%d/stat", cpid);
+		FILE *statFile = fopen(procFileName, "r");
+		sprintf(procFileName, "/proc/%d/task", cpid);
+		DIR *taskDir = opendir(procFileName);
+		/* parse /proc/pid */
+		int pid;
+		char commandName[PATH_MAX];
+		char state;
+		int ppid, pgrp, session, tty_nr, tpgid;
+		unsigned int flags;
+		unsigned long minflt, cminflt, majflt, cmajflt, utime, stime;
+		long cutime, cstime, priority, nice, num_threads, itrealvalue;
+		
+		fprintf(output, "  PID\t TTY\t TIME\t COMMAND\n");
+		fscanf(statFile, "%d %s %c %d %d %d %d %d %u %lu %lu %lu %lu %lu %lu %l %l %l %l %l %l",
+			   &pid, &commandName, &state, &ppid, &pgrp, &session, &tty_nr, &tpgid, &flags, &minflt, &cminflt,
+			   &majflt, &cmajflt, &utime, &stime, &cutime, &cstime, &priority, &nice, &num_threads, &itrealvalue);
+		/* print line by line to output file stream */
+		fprintf(output, "%d %d %lu %s\n", pid, tty_nr, utime+stime, commandName);
+		fclose(statFile);
+		
+		struct dirent *curDirent;
+		while ((curDirent = readdir(taskDir)) != NULL) {
+			fprintf(output, "%s", curDirent->d_name);
+				//sprintf(procFileName, "/proc/%d/stat", NULL);
+			statFile = fopen(procFileName, "r");
+			fscanf(statFile, "%256s", &commandName);
+			fprintf(output, "%s", commandName);
+		}
+		closedir(taskDir);
+	}
+	fflush(output);
+	fclose(input);
+	fclose(output);
 }
 
 /********************************************************************************
@@ -146,7 +153,7 @@ void builtin_kill(int argc, char **argv, int inputFD, int outputFD) {
 	int signal = 0; /* signal to send to pid */
 	if (argc == 2) {
 		if (argv[1][0] != '-') { /* if first argument is not a flag, send SIGTERM to specified pid */
-		  pidlist = malloc(sizeof(int)*1);
+			pidlist = malloc(sizeof(int)*1);
 			long inputPID = strtol(argv[1], NULL, 10);
 			if (inputPID > INT_MAX || inputPID == 0) {
 				const char *errormsg = "Invalid PID";
@@ -196,24 +203,24 @@ void builtin_kill(int argc, char **argv, int inputFD, int outputFD) {
 		pidlist = malloc(sizeof(int)*(argc-2));
 		/* second argument onwards are pids to signal */
 		for (int i = 2; i < argc; i++) {
-		long inputPID = strtol(argv[2], NULL, 10);
-		/* ensure value is legal and will not discard overflowing bits unnecessarily */
-		if (inputPID > INT_MAX || inputPID == 0) {
-			const char *errormsg = "Invalid PID";
-			write(outputFD, errormsg, strlen(errormsg));
-			return;
-		}
-		else {
-			pidlist[i-2] = (int)inputPID;
-		}
+			long inputPID = strtol(argv[2], NULL, 10);
+			/* ensure value is legal and will not discard overflowing bits unnecessarily */
+			if (inputPID > INT_MAX || inputPID == 0) {
+				const char *errormsg = "Invalid PID";
+				write(outputFD, errormsg, strlen(errormsg));
+				return;
+			}
+			else {
+				pidlist[i-2] = (int)inputPID;
+			}
 		}
 	}
 	if (pidlist != NULL && signal != 0) {
-	  for (int i = 0; i < argc-2; i++) {
-		if (kill(pidlist[i], signal) != 0) {
-			perror("kill");
+		for (int i = 0; i < argc-2; i++) {
+			if (kill(pidlist[i], signal) != 0) {
+				perror("kill");
+			}
 		}
-	  }
 		free(pidlist);
 	}
 	else {
@@ -248,13 +255,13 @@ int forkAndExecute(int argc, char **argv, int inputFD, int outputFD) {
 		return -1;
 	}
 	else if (strcmp(argv[0], "pwd") == 0) {
-	        builtin_pwd(argc, argv, inputFD, outputFD);
+		builtin_pwd(argc, argv, inputFD, outputFD);
 	}
 	else if (strcmp(argv[0], "kill") == 0) {
-	        builtin_kill(argc, argv, inputFD, outputFD);
+		builtin_kill(argc, argv, inputFD, outputFD);
 	}
 	else if (strcmp(argv[0], "ps") == 0) {
-	  builtin_ps(argc, argv, inputFD, outputFD);
+		builtin_ps(argc, argv, inputFD, outputFD);
 	}
 	else {
 		int pid = fork();
