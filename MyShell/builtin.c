@@ -113,8 +113,8 @@ void printStatsFromFile(FILE *statFile, FILE *output) {
 	/* print line by line to output file stream */
 	int hours, mins, secs;
 	hours = (utime+stime)/360000;
-	mins = (utime+stime)/6000;
-	secs = (utime+stime)/100;
+	mins = ((utime+stime)%360000)/6000;
+	secs = ((utime+stime)%6000)/100;
 	fprintf(output, " %d\t %d\t %02d:%02d:%02d  %s\n", pid, tty_nr, hours, mins, secs, commandName);
 	
 }
