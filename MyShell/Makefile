@@ -1,6 +1,6 @@
 
 
-OBJECTS := main.o commands.o builtin.o
+OBJECTS := main.o commands.o builtin.o ps.o
 
 
 all: shell
