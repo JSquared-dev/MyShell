@@ -86,27 +86,51 @@ void builtin_cd(int argc, char **argv, int inputFD, int outputFD) {
 		perror("cd");
 }
 
-void printStatsForProcess(FILE *statFile, FILE *output) {
-  int pid;
-  char commandName[PATH_MAX];
-  char state;
-  int ppid, pgrp, session, tty_nr, tpgid;
-  unsigned int flags;
-  unsigned long minflt, cminflt, majflt, cmajflt, utime, stime;
-  long cutime, cstime, priority, nice, num_threads, itrealvalue;
-
-  fscanf(statFile, "%d %s %c %d %d %d %d %d %u %lu %lu %lu %lu %lu %lu %l %l %l %l %l %l",
-	 &pid, &commandName, &state, &ppid, &pgrp, &session, &tty_nr, &tpgid, &flags, &minflt, &cminflt,
-	 &majflt, &cmajflt, &utime, &stime, &cutime, &cstime, &priority, &nice, &num_threads, &itrealvalue);
-  /* print line by line to output file stream */
-  fprintf(output, "%d %d %lu %s\n", pid, tty_nr, utime+stime, commandName);
-
+/********************************************************************************
+ * Function name  : void printStatsFromFile(FILE *statFile, FILE *output)
+ *          statFile : Open file stream of the stat file in a pid's /proc folder.
+ *			 output  : output file stream to print format to. Is a file stream to access convenience 
+ *						format methods
+ *
+ * Created by     : James Johns
+ * Date created   : 2/12/2012
+ * Description    : parse statFile and print the information to output.
+ *
+ * NOTES          : 
+ ********************************************************************************/
+void printStatsFromFile(FILE *statFile, FILE *output) {
+	int pid;
+	char commandName[PATH_MAX];
+	char state;
+	int ppid, pgrp, session, tty_nr, tpgid;
+	unsigned int flags;
+	unsigned long minflt, cminflt, majflt, cmajflt, utime, stime;
+	long cutime, cstime, priority, nice, num_threads, itrealvalue;
+	
+	fscanf(statFile, "%d %s %c %d %d %d %d %d %u %lu %lu %lu %lu %lu %lu %l %l %l %l %l %l",
+		   &pid, &commandName, &state, &ppid, &pgrp, &session, &tty_nr, &tpgid, &flags, &minflt, &cminflt,
+		   &majflt, &cmajflt, &utime, &stime, &cutime, &cstime, &priority, &nice, &num_threads, &itrealvalue);
+	/* print line by line to output file stream */
+	fprintf(output, "%d %d %lu %s\n", pid, tty_nr, utime+stime, commandName);
+	
 }
 
 /********************************************************************************
- * Function name  : void builtin_ps(int argc, char **argv)
+ * Function name  : void builtin_ps(int argc, char **argv, int inputFD, int outputFD)
+ *             argc  : Number of elements in argv.
+ *             argv  : Array of NULL terminated strings.
+ *			 inputFD : input pipe file descriptor. can be a valid pipe() fd or stdin.
+ *			 outputFD: output pipe file descriptor. can be a valid pipe() fd or stdout.
  *
- */
+ * Created by     : James Johns
+ * Date created   : 2/12/2012
+ * Description    : Print process information to outputFD.
+ *
+ *					No arguments specified - print the stats of the current pid and any child 
+ *												processes currently running
+ *
+ * NOTES          : 
+ ********************************************************************************/
 void builtin_ps(int argc, char **argv, int inputFD, int outputFD) {
 	FILE *output = fdopen(dup(outputFD), "w");
 	FILE *input = fdopen(dup(inputFD), "r");
@@ -120,35 +144,49 @@ void builtin_ps(int argc, char **argv, int inputFD, int outputFD) {
 		FILE *statFile = fopen(procFileName, "r");
 		sprintf(procFileName, "/proc/%d/task", cpid);
 		DIR *taskDir = opendir(procFileName);
-		/* parse /proc/pid */
-		//		int pid;
-		//char commandName[PATH_MAX];
-		//char state;
-		//int ppid, pgrp, session, tty_nr, tpgid;
-		//unsigned int flags;
-		//unsigned long minflt, cminflt, majflt, cmajflt, utime, stime;
-		//long cutime, cstime, priority, nice, num_threads, itrealvalue;
 		
 		fprintf(output, "  PID\t TTY\t TIME\t COMMAND\n");
-		//fscanf(statFile, "%d %s %c %d %d %d %d %d %u %lu %lu %lu %lu %lu %lu %l %l %l %l %l %l",
-		// &pid, &commandName, &state, &ppid, &pgrp, &session, &tty_nr, &tpgid, &flags, &minflt, &cminflt,
-		// &majflt, &cmajflt, &utime, &stime, &cutime, &cstime, &priority, &nice, &num_threads, &itrealvalue);
-		/* print line by line to output file stream */
-		//fprintf(output, "%d %d %lu %s\n", pid, tty_nr, utime+stime, commandName);
-		printStatsForProcess(statFile, output);
+		/* print initial pid before descending through child processes */
+		printStatsFromFile(statFile, output);
 		fclose(statFile);
 		
+		/* loop through every directory entry and get child pids from them
+		 * then print their stat files */
 		struct dirent *curDirent;
 		while ((curDirent = readdir(taskDir)) != NULL) {
-		  int childPID;
-		  //fprintf(output, "%s\n", curDirent->d_name);
-			if (sscanf(curDirent->d_name, "%d", &childPID) == 1) {
-			  sprintf(procFileName, "/proc/%d/stat", childPID);
-			  statFile = fopen(procFileName, "r");
-			  printStatsForProcess(statFile, output);
+			int childPID;
+			if (sscanf(curDirent->d_name, "%d", &childPID) == 1 && childPID != cpid) {
+				sprintf(procFileName, "/proc/%d/stat", childPID);
+				statFile = fopen(procFileName, "r");
+				printStatsFromFile(statFile, output);
+				fclose (statFile);
 			}
 		}
 		closedir(taskDir);
+	}
+	else if (argc == 2) {
+		if (strcmp(argv[1], "-A") == 0) {
+			/* list every running process */
+			fprintf(output, "  PID\t TTY\t TIME\t COMMAND\n");
+			
+			/* loop through every directory entry and get child pids from them
+			 * then print their stat files */
+			DIR *taskDir = opendir("/proc");
+			struct dirent *curDirent;
+			while ((curDirent = readdir(taskDir)) != NULL) {
+				int childPID;
+				if (sscanf(curDirent->d_name, "%d", &childPID) == 1) {
+					sprintf(procFileName, "/proc/%d/stat", childPID);
+					statFile = fopen(procFileName, "r");
+					printStatsFromFile(statFile, output);
+					fclose (statFile);
+				}
+			}
+			closedir(taskDir);
+		}
+	}
+	else {
+		fprintf(output, "Too many arguments");
 	}
 	fflush(output);
 	fclose(input);
