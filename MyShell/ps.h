@@ -13,6 +13,7 @@
 #include "builtin.h"
 
 struct ps_s {
+	/* raw data */
 	int pid;
 	char commandName[PATH_MAX];
 	char state;
@@ -20,6 +21,10 @@ struct ps_s {
 	unsigned int flags;
 	unsigned long minflt, cminflt, majflt, cmajflt, utime, stime;
 	long cutime, cstime, priority, nice, num_threads, itrealvalue;
+	
+	/* processed data */
+	int hours, mins, secs;
+	char ttyDeviceName[50];
 };
 
 void builtin_ps(int argc, char **argv, int inputFD, int outputFD);
