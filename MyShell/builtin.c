@@ -73,11 +73,15 @@ void builtin_cd(int argc, char **argv, int inputFD, int outputFD) {
 	/* if we are not given a directory, return to home directory */
 	char *directory;
 	write(outputFD, "BUILTIN\n", 8);
-	if (argc > 1) {
+	if (argc == 2) {
 		directory = argv[1];
 	}
-	else {
+	else if (argc == 1) {
 		directory = getenv("HOME");
+	}
+	else {
+		fprintf(stderr, "Invalid arguments");
+		return;
 	}
 	
 	if (chdir(directory) != 0) 
