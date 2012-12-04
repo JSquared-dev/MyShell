@@ -152,7 +152,7 @@ struct ps_s *parseStatFile(FILE *statFile) {
 		devicePrefix = "pts/";
 		sprintf((char *)toRet->ttyDeviceName, "%s%d", devicePrefix, deviceNumber);
 	}
-	else if (prefixNumber == 0x18) {
+	else if (prefixNumber == 0x04) {
 		devicePrefix = "/dev/tty";
 		sprintf((char *)toRet->ttyDeviceName, "%s%d", devicePrefix, deviceNumber);
 	}
