@@ -22,7 +22,6 @@
 
 void builtin_pwd(int argc, char **argv, int inputFD, int outputFD);
 void builtin_cd(int argc, char **argv, int inputFD, int outputFD);
-void builtin_kill(int argc, char **argv, int inputFD, int outputFD);
 
 int forkAndExecute(int argc, char **argv, int inputFD, int outputFD);
 
