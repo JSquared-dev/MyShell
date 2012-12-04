@@ -50,8 +50,13 @@ void builtin_ps(int argc, char **argv, int inputFD, int outputFD) {
 		hours = ((statContent->stime+statContent->utime))/360000;
 		mins = ((statContent->stime+statContent->utime)%360000)/6000;
 		secs = ((statContent->stime+statContent->utime)%6000)/100;
-		fprintf(output, " %d\t %d\t %02d:%02d:%02d  %s\n", statContent->pid, statContent->tty_nr, 
+		char *ttyDevice = malloc(sizeof(char)*50);
+		char *devicePrefix = ((statContent->tty_nr & 0xFF00) >> 8) == 0x88 ? "pts/" : "/dev/tty";
+		int deviceNumber = (statContent->tty_nr & 0xFF) | ((statContent->tty_nr & 0xFFFF0000) >> 16);
+		sprintf(ttyDevice, "%s%d", devicePrefix, deviceNumber);
+		fprintf(output, " %d\t %s\t %02d:%02d:%02d  %s\n", statContent->pid,  ttyDevice, 
 				hours, mins, secs, statContent->commandName);
+		free(ttyDevice);
 		fclose(statFile);
 		
 		/* loop through every directory entry and get child pids from them
@@ -66,9 +71,14 @@ void builtin_ps(int argc, char **argv, int inputFD, int outputFD) {
 				hours = ((statContent->stime+statContent->utime))/360000;
 				mins = ((statContent->stime+statContent->utime)%360000)/6000;
 				secs = ((statContent->stime+statContent->utime)%6000)/100;
-				fprintf(output, " %d\t %d\t %02d:%02d:%02d  %s\n", statContent->pid, statContent->tty_nr, 
+				char *ttyDevice = malloc(sizeof(char)*50);
+				char *devicePrefix = ((statContent->tty_nr & 0xFF00) >> 8) == 0x88 ? "pts/" : "/dev/tty";
+				int deviceNumber = (statContent->tty_nr & 0xFF) | ((statContent->tty_nr & 0xFFFF0000) >> 16);
+				sprintf(ttyDevice, "%s%d", devicePrefix, deviceNumber);
+				fprintf(output, " %d\t %s\t %02d:%02d:%02d  %s\n", statContent->pid, ttyDevice, 
 										hours, mins, secs, statContent->commandName);
 				fclose (statFile);
+				free(ttyDevice);
 			}
 		}
 		closedir(taskDir);
@@ -90,9 +100,19 @@ void builtin_ps(int argc, char **argv, int inputFD, int outputFD) {
 					hours = ((statContent->stime+statContent->utime))/360000;
 					mins = ((statContent->stime+statContent->utime)%360000)/6000;
 					secs = ((statContent->stime+statContent->utime)%6000)/100;
-					fprintf(output, " %d\t %d\t %02d:%02d:%02d  %s\n", statContent->pid, statContent->tty_nr, 
+					char *ttyDevice = malloc(sizeof(char)*50);
+					char *devicePrefix = "?";
+					if (((statContent->tty_nr & 0xFF00) >> 8) == 0x88) {
+					  devicePrefix = "pts/";
+					}
+					else if (((statContent->tty_nr & 0xFF00) >> 8) == 5) {
+					  devicePrefix = "/dev/tty";
+					}
+					int deviceNumber = (statContent->tty_nr & 0xFF) | ((statContent->tty_nr & 0xFFFF0000) >> 16);
+					fprintf(output, " %d\t %d\t %02d:%02d:%02d  %s\n", statContent->pid, ttyDevice, 
 											hours, mins, secs, statContent->commandName);
 					fclose (statFile);
+					free(ttyDevice);
 				}
 			}
 			closedir(taskDir);
