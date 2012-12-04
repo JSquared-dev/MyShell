@@ -145,9 +145,18 @@ struct ps_s *parseStatFile(FILE *statFile) {
 	toRet->mins = (int) ((toRet->stime+toRet->utime)%360000)/6000;
 	toRet->secs = (int) ((toRet->stime+toRet->utime)%6000)/100;
 	
-	char *devicePrefix = ((toRet->tty_nr & 0xFF00) >> 8) == 0x88 ? "pts/" : "/dev/tty";
+	char *devicePrefix = NULL;
+	if (((toRet->tty_nr & 0xFF00) >> 8) == 0x88) {
+		devicePrefix = "pts/";
+	}
+	else if (((toRet->tty_nr & 0xFF00) >> 8) == 0x18) {
+		devicePrefix = "/dev/tty";
+	}
+	else {
+		devicePrefix = "?";
+	}
 	int deviceNumber = (toRet->tty_nr & 0xFF) | ((toRet->tty_nr & 0xFFFF0000) >> 16);
-	sprintf((char *)toRet->ttyDeviceName, "%.46s%4d", devicePrefix, deviceNumber);
+	sprintf((char *)toRet->ttyDeviceName, "%s%d", devicePrefix, deviceNumber);
 
 	return toRet;
 }
