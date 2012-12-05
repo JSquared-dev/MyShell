@@ -26,7 +26,7 @@ struct command_s {
 	int backgroundTask; /* if 1, send this command to background and recover keyboard access */
 };
 
-int readCommandLine(char **command, FILE *source);
+int readCommandLine(char **command);
 struct command_s *interpretCommand(char *commandLine);
 int executeCommand(struct command_s *command);
 void destroyCommand(struct command_s *command);

@@ -23,12 +23,10 @@
 
 
 /********************************************************************************
- * Function name  : int interpretCommand(char **buffer, FILE *source)
+ * Function name  : int interpretCommand(char **buffer)
  *     returns    : zero on success, non-zero on failure
  *         buffer     : A pointer to a char array, used to hold the input line. 
  *                      must not be malloc'd by caller. is malloc'd inside this function.
- *         source     : File handle to read command line input from. If NULL is
- *                      passed, stdin is used instead.
  * 
  * Created by     : James Johns
  * Date created   : 10/12/2011
@@ -37,12 +35,7 @@
  *
  * NOTES          : BUG - Does not deal with arrow keys
  ********************************************************************************/
-int readCommandLine(char **buffer, FILE *source) {
-  //	printf("\n >");		/* command prompt character */
-	if (source == NULL)
-		source = stdin;
-	
-	//	fgets(buffer, MAXCOMMANDLENGTH, source);
+int readCommandLine(char **buffer) {
 	*buffer = readline("\n >");
 	if (*buffer != (char)NULL)	/* if we actually read something in */
 		return 0;					/* return success */
