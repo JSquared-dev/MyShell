@@ -10,7 +10,7 @@ clean:
 	rm shell
 
 shell: $(OBJECTS)
-	gcc -lc -o $@ $(OBJECTS)
+	gcc -lc -lgcc -lreadline -o $@ $(OBJECTS)
 
 .c.o:
 	gcc --std=c99 -c -g -o $@ $<

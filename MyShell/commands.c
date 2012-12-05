@@ -18,13 +18,15 @@
 #include <stdio.h>
 #include <string.h>
 #include <unistd.h>
+#include <readline/readline.h>
+#include <readline/history.h>
 
 
 /********************************************************************************
- * Function name  : int interpretCommand(char *buffer, FILE *source)
+ * Function name  : int interpretCommand(char **buffer, FILE *source)
  *     returns    : zero on success, non-zero on failure
- *         buffer     : A char array of MAXCOMMANDLENGTH in size to store
- *                      command line contents in for later processing.
+ *         buffer     : A pointer to a char array, used to hold the input line. 
+ *                      must not be malloc'd by caller. is malloc'd inside this function.
  *         source     : File handle to read command line input from. If NULL is
  *                      passed, stdin is used instead.
  * 
@@ -35,13 +37,14 @@
  *
  * NOTES          : BUG - Does not deal with arrow keys
  ********************************************************************************/
-int readCommandLine(char *buffer, FILE *source) {
-	printf("\n >");		/* command prompt character */
+int readCommandLine(char **buffer, FILE *source) {
+  //	printf("\n >");		/* command prompt character */
 	if (source == NULL)
 		source = stdin;
 	
-	fgets(buffer, MAXCOMMANDLENGTH, source);
-	if (buffer[0] != (char)NULL)	/* if we actually read something in */
+	//	fgets(buffer, MAXCOMMANDLENGTH, source);
+	*buffer = readline("\n >");
+	if (*buffer != (char)NULL)	/* if we actually read something in */
 		return 0;					/* return success */
 	else
 		return -1;
@@ -119,7 +122,7 @@ struct command_s *interpretCommand(char *commandLine) {
 		
 		/* loop until we reach the end of the string or we hit a new line character
 		 * tokenising the string at each space character */
-		while (i < strlen(commandLine)) {
+		while (i <= strlen(commandLine)) {
 			switch (commandLine[i]) {
 				case ' ':
 				case '\n':
