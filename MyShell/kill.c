@@ -50,26 +50,26 @@ void builtin_kill(int argc, char **argv, int inputFD, int outputFD) {
 			const char *signalsList = "1) SIGHUP\t\t9) SIGKILL\t\t15) SIGTERM\n";
 			write(outputFD, signalsList, strlen(signalsList));
 			return;
-		}
-		else {
-			write(outputFD, "Invalid argument\n", 17);
-			return;
-		}
+		  }
+		  else {
+		    perror("Invalid argument");
+		  }
 	}
 	else if (argc >= 3) {
 		/* first argument is signal to send */
 		/* if the first character is a number, read the whole argument as a number */
-		if (isdigit(argv[1][0])) {
-			long inputSignal = strtol(argv[1], NULL, 10);
+		if (argv[1][0] == '-') {
+		  if (sscanf(argv[1], "-%d", &signal) == 1) {
 			/* ensure value is legal and will not discard overflowing bits unnecessarily */
-			if (inputSignal > INT_MAX || inputSignal == 0) {
+			if (signal > INT_MAX || signal == 0) {
 				const char *errormsg = "Invalid Signal";
 				write(outputFD, errormsg, strlen(errormsg));
 				return;
 			}
-			else {
-				signal = (int)inputSignal;
-			}
+		  }
+		  else {
+		    signal = 0;
+		  }
 		}
 		else if (strcmp(argv[1], "SIGKILL") == 0) {
 			signal = SIGKILL;
