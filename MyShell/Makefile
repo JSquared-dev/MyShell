@@ -1,6 +1,6 @@
 
 
-OBJECTS := main.o commands.o builtin.o ps.o
+OBJECTS := main.o commands.o builtin.o ps.o kill.o
 
 
 all: shell
